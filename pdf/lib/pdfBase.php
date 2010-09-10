@@ -1,8 +1,8 @@
 <?php
 
-include_once("fpdf/fpdf.php");
+include_once("lib/libPDF.php");
 
-abstract class pdfBase extends FPDF {
+abstract class pdfBase extends libPDF {
 	private $name;
 	private $message;
 
