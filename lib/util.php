@@ -40,5 +40,3 @@ function file_which($path) {
 
 	return false;
 }
-
-?>
