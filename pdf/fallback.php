@@ -13,5 +13,3 @@ class fallback extends pdfBase {
 		return null;
 	}
 }
-
-?>

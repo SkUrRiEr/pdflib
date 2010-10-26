@@ -323,5 +323,3 @@ class libPDF extends FPDF {
 		return $lines;
 	}
 }
-
-?>

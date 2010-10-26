@@ -130,5 +130,3 @@ if( $ret === null ) {
 }
 
 print $hr->get();
-
-?>

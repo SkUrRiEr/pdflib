@@ -31,5 +31,3 @@ abstract class pdfBase extends libPDF {
 		return $this->message;
 	}
 }
-
-?>
