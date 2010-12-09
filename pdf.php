@@ -59,9 +59,11 @@ if( isset($_SERVER["PATH_INFO"]) && $_SERVER["PATH_INFO"] != "" )
 // Set up the environment for htmlResponse 
 define("IS_AJAX", true);
 
-header("Content-type: application/pdf");
-if($_SERVER["HTTP_USER_AGENT"] == "contype")
+if($_SERVER["HTTP_USER_AGENT"] == "contype") {
+	header("Content-type: application/pdf");
+
 	exit;
+}
 
 $pdf = new libPDF();
 
@@ -109,18 +111,16 @@ if( $ret != null && $ret != false ) {
 $hr = new htmlResponse(true, true);
 
 if( $ret === null ) {
-	header("Content-type: text/html");
-
 	$hr->set("<html><head><title>PDF Page</title></head><body><h1>PDF Not Found</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>");
 
 	header("HTTP/1.1 404 Page Not Found");
 } else if( $ret === FALSE ) {
-	header("Content-type: text/html");
-
 	$hr->set("<html><head><title>PDF Generation Failed</title></head><body><h1>PDF Generation Failed</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>");
 
 	header("HTTP/1.1 500 Server Error");
 } else {
+	header("Content-type: application/pdf");
+
 	$content = $cls->Output(null, "S");
 
 	$hr->set($content);
