@@ -7,6 +7,7 @@ class libPDF extends FPDF {
 	private $excess_text;
 	private $defered_borders;
 	private $cur_line_h;
+	private $angle;
 
 	public function __construct($orientation = "P", $unit = "mm", $format = "A4") {
 		parent::__construct($orientation, $unit, $format);
@@ -20,6 +21,7 @@ class libPDF extends FPDF {
 		$this->cur_line_h = null;
 		$this->excess_text = array();
 		$this->defered_borders = array();
+		$this->angle = 0;
 
 		$this->SetDefaultFont();
 	}
@@ -98,6 +100,33 @@ class libPDF extends FPDF {
 			"size" => $this->FontSizePt
 		);
 	}
+
+	// Random stuff to do fancy shit
+
+	// This was stolen from a random web forum and modified until it made
+	// sense.
+	public function Rotate($angle, $x = null, $y = null) {
+		if($x == null)
+			$x = $this->x;
+	       
+		if($y == null)
+			$y = $this->y;
+
+		if($this->angle != 0)
+			$this->_out('Q');
+	       
+		$this->angle = $angle;
+	       
+		if($angle != 0) {
+			$angle *= M_PI / 180;
+			$c = cos($angle);
+			$s = sin($angle);
+			$cx = $x * $this->k;
+			$cy = ($this->h - $y) * $this->k;
+			
+			$this->_out(sprintf('q %.5f %.5f %.5f %.5f %.2f %.2f cm 1 0 0 1 %.2f %.2f cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+		}
+       	}
 
 	// Overidden base class functions
 
