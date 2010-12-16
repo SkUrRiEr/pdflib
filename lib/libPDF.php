@@ -58,6 +58,56 @@ class libPDF extends FPDF {
 			$this->SetDefaultFont($curfont);
 	}
 
+	public function FlowText($text, $style = null) {
+		if( $style != null ) {
+			$curfont = $this->GetCurrentFont();
+
+			if( is_string($style) )
+				$style = array(
+					"style" => $style
+				);
+
+			$this->SetDefaultFont($style);
+		}
+
+		$h = $this->FontSizePt / 2;
+
+		if( $this->cur_line_h < $h )
+			$this->cur_line_h = $h;
+
+		while( $text != "" ) {
+			$x = $this->GetX();
+			$w = $this->w - $this->rMargin - $x;
+
+			$set = $this->SplitTextAt($text, $w);
+
+			if( $set == null )
+				break;
+
+			$chunk = $set[0];
+
+			if( isset($set[1]) ) {
+				$text = $set[1];
+
+				if( $chunk != "" )
+					$chunk .= " ";
+			} else
+				$text = "";
+
+			if( $chunk != "" ) {
+				$cw = $this->GetStringWidth($chunk);
+
+				$this->Cell($cw, $h, $chunk);
+			}
+
+			if( $text != "" )
+				$this->Ln();
+		}
+
+		if( $style != null )
+			$this->SetDefaultFont($curfont);
+	}
+
 	public function SetDefaultFont($name = null, $style = null, $size = null) {
 		if( is_array($name) ) {
 			if( isset($name["size"]) )
@@ -352,6 +402,36 @@ class libPDF extends FPDF {
 	}
 
 	// Utility functions
+
+	public function SplitTextAt($string, $width) {
+		$strings = array();
+
+		if( $string == "" )
+			return null;
+		else if( $this->GetStringWidth($string) < $width )
+			return array($string);
+
+		$str = "";
+		$strlen = 0;
+
+		while(preg_match("/^(\s*\S*\s*)(.*)$/s", $string, $regs) && ($strlen + ($len = $this->GetStringWidth($regs[1]))) < $width - 2) {
+			$str .= $regs[1];
+			$strlen += $len;
+
+			if( !isset($regs[2]) ) {
+				$string = "";
+				$regs = null;
+
+				break;
+			}
+
+			$string = $regs[2];
+
+			$regs = null;
+		}
+
+		return array($str, $string);
+	}
 
 	public function SplitIntoLines($input, $width) {
 		$inlines = explode("\n", $input);
