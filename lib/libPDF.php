@@ -201,6 +201,24 @@ class libPDF extends FPDF {
 		parent::Ln($h);
 	}
 
+	public function SetDrawColor($r, $g = null, $b = null) {
+		$c = $this->parseColours($r, $g, $b);
+
+		return parent::SetDrawColor($c["red"], $c["green"], $c["blue"]);
+	}
+
+	public function SetFillColor($r, $g = null, $b = null) {
+		$c = $this->parseColours($r, $g, $b);
+
+		return parent::SetFillColor($c["red"], $c["green"], $c["blue"]);
+	}
+
+	public function SetTextColor($r, $g = null, $b = null) {
+		$c = $this->parseColours($r, $g, $b);
+
+		return parent::SetTextColor($c["red"], $c["green"], $c["blue"]);
+	}
+
 	// Helper functions
 
 	private function OutputText($lines, $x, $width, $fontstyle, $border, $align, $link) {
@@ -296,6 +314,19 @@ class libPDF extends FPDF {
 		}
 
 		$this->defered_borders = array();
+	}
+
+	private function parseColours($r, $g, $b) {
+		if( $r == null )
+			$r = 0;
+
+		if( is_array($r) )
+			return $r;
+
+		if( $g == null || $b == null || ($r == $g && $g == $b) )
+			return array("red" => $r, "green" => null, "blue" => null);
+
+		return array("red" => $r, "green" => $g, "blue" => $b);
 	}
 
 	// Utility functions
