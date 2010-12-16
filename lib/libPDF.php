@@ -108,6 +108,83 @@ class libPDF extends FPDF {
 			$this->SetDefaultFont($curfont);
 	}
 
+	public function HTMLText($html) {
+		$doc = new DOMDocument();
+
+		$doc->loadXML("<root/>");
+
+		$f = $doc->createDocumentFragment();
+		if( !$f->appendXML($html) )
+			return;
+
+		$doc->documentElement->appendChild($f);
+
+		$cur = $doc->documentElement;
+
+		$style = array();
+
+		$inpara = null;
+
+		while( $cur != null ) {
+			if( $cur->nodeType == XML_TEXT_NODE ) {
+				if( $inpara === 0 ) {
+					$this->Ln();
+					$this->Ln();
+				}
+
+				$inpara = 1;
+
+				$this->FlowText($cur->nodeValue, implode("", $style));
+			} else if( $cur->nodeType == XML_ELEMENT_NODE )
+				switch(strtolower($cur->nodeName)) {
+					case "b":
+						array_push($style, "B");
+						break;
+					case "i":
+						array_push($style, "I");
+						break;
+					case "u":
+						array_push($style, "U");
+						break;
+					case "br":
+						$this->Ln();
+						break;
+					case "p":
+						if( $inpara !== null && $inpara < 2 ) {
+							$this->Ln();
+							$this->Ln();
+						}
+
+						$inpara = 2;
+						break;
+				}
+
+			if( $cur->firstChild )
+				$cur = $cur->firstChild;
+			else if( $cur->nextSibling )
+				$cur = $cur->nextSibling;
+			else {
+				while( $cur != null && $cur->nextSibling == null) {
+					$cur = $cur->parentNode;
+
+					if( $cur != null )
+						switch(strtolower($cur->nodeName)) {
+							case "b":
+							case "i":
+							case "u":
+								array_pop($style);
+								break;
+							case "p":
+								$inpara = 0;
+						}
+				}
+
+				if( $cur != null )
+					$cur = $cur->nextSibling;
+			}
+		}
+	}
+
 	public function SetDefaultFont($name = null, $style = null, $size = null) {
 		if( is_array($name) ) {
 			if( isset($name["size"]) )
