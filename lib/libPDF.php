@@ -207,16 +207,28 @@ class libPDF extends FPDF {
 		return parent::SetDrawColor($c["red"], $c["green"], $c["blue"]);
 	}
 
+	public function GetDrawColor() {
+		return $this->decodePDFColour($this->DrawColor, "G", "RG");
+	}
+
 	public function SetFillColor($r, $g = null, $b = null) {
 		$c = $this->parseColours($r, $g, $b);
 
 		return parent::SetFillColor($c["red"], $c["green"], $c["blue"]);
 	}
 
+	public function GetFillColor() {
+		return $this->decodePDFColour($this->FillColor, "g", "rg");
+	}
+
 	public function SetTextColor($r, $g = null, $b = null) {
 		$c = $this->parseColours($r, $g, $b);
 
 		return parent::SetTextColor($c["red"], $c["green"], $c["blue"]);
+	}
+
+	public function GetTextColor() {
+		return $this->decodePDFColour($this->TextColor, "g", "rg");
 	}
 
 	// Helper functions
@@ -327,6 +339,16 @@ class libPDF extends FPDF {
 			return array("red" => $r, "green" => null, "blue" => null);
 
 		return array("red" => $r, "green" => $g, "blue" => $b);
+	}
+
+	private function decodePDFColour($string, $g, $c) {
+		if( preg_match("/^([[:digit:].]*)\s+".$g."$/", $string, $regs) )
+			return $regs[1] * 255;
+
+		if( preg_match("/^([[:digit:].]*)\s+([[:digit:].]*)\s+([[:digit:].]*)\s+".$c."$/", $string, $regs) )
+			return array("red" => $regs[1] * 255, "green" => $regs[2] * 255, "blue" => $regs[3] * 255);
+
+		return null;
 	}
 
 	// Utility functions
