@@ -100,6 +100,9 @@ class libPDF extends FPDF {
 				$this->Cell($cw, $h, $chunk);
 			}
 
+			if( $this->GetY() + ($h * 2) > $this->PageBreakTrigger )
+				$this->AddPage();
+
 			if( $text != "" )
 				$this->Ln();
 		}
