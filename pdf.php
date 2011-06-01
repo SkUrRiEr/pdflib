@@ -47,6 +47,7 @@
  */
 
 require_once("includes/config.php");
+require_once("lib/libPDF.php");
 require_once("pdf/lib/pdfBase.php");
 require_once("lib/htmlResponse.class.php");
 require_once("lib/util.php");
@@ -65,7 +66,7 @@ if($_SERVER["HTTP_USER_AGENT"] == "contype") {
 	exit;
 }
 
-$pdf = new libPDF();
+$docclass = new libPDF();
 
 $args = array();
 for($i = 1; $i < count($items); $i++)
@@ -81,7 +82,7 @@ if( $class != null && file_which("pdf/".$class.".php") ) {
 	require_once("pdf/".$class.".php");
 
 	if( class_exists($class) ) {
-		$cls = new $class();
+		$cls = new $class($docclass);
 
 		if( !is_subclass_of($cls, "pdfBase") )
 			$cls = null;
