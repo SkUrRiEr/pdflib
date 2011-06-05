@@ -40,3 +40,44 @@ function file_which($path) {
 
 	return false;
 }
+
+function parseHTMLColour($colour) {
+	$colour = trim($colour);
+
+	if( preg_match("/^#([0123456789ABCDEF]{2})([0123456789ABCDEF]{2})([0123456789ABCDEF]{2})$/i", $colour, $regs) ) {
+		$red = $regs[1];
+		$green = $regs[2];
+		$blue = $regs[3];
+	} else if( preg_match("/^#([0123456789ABCDEF]{3})$/i", $colour, $regs) ) {
+		$red = $regs[1][0];
+		$green = $regs[1][1];
+		$blue = $regs[1][2];
+	}
+
+	if( isset($red) ) {
+		$out = array();
+
+		$out["red"] = hexdec($red);
+		$out["green"] = hexdec($green);
+		$out["blue"] = hexdec($blue);
+
+		if( strlen($red) == 1 ) {
+			$out["red"] *= 16;
+			$out["green"] *= 16;
+			$out["blue"] *= 16;
+		}
+
+		return $out;
+	}
+
+/* TODO: Add support for standard named HTML colours
+	switch($colour) {
+	}
+ */
+
+	return array(
+		"red" => 255,
+		"green" => 255,
+		"blue" => 255
+	);
+}
