@@ -27,6 +27,10 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->SetDefaultFont();
 	}
 
+	public function getMimeType() {
+		return "application/pdf";
+	}
+
 	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null) {
 		if( $fontstyle != null ) {
 			if( is_string($fontstyle) )
