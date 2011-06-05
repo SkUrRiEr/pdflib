@@ -47,26 +47,40 @@
  */
 
 require_once("includes/config.php");
-require_once("lib/libPDF.php");
 require_once("pdf/lib/pdfBase.php");
 require_once("lib/htmlResponse.class.php");
 require_once("lib/util.php");
 
 $items = array();
+$extension = null;
 
-if( isset($_SERVER["PATH_INFO"]) && $_SERVER["PATH_INFO"] != "" )
-	$items = explode("/", preg_replace("/\.pdf$/i", "", preg_replace("/^\//", "", $_SERVER["PATH_INFO"])));
+if( isset($_SERVER["PATH_INFO"]) && $_SERVER["PATH_INFO"] != "" ) {
+	$path = preg_replace("/^\//", "", $_SERVER["PATH_INFO"]);
+
+	if( preg_match("/^(.*)\.(.*?)$/", $path, $regs) ) {
+		$extension = $regs[2];
+
+		$path = $regs[1];
+	}
+
+	$items = explode("/", $path);
+}
+
+switch(strtolower($extension)) {
+	case "pdf":
+	default:
+		require_once("lib/libPDF.php");
+		$docclass = new libPDF();
+}
 
 // Set up the environment for htmlResponse 
 define("IS_AJAX", true);
 
 if($_SERVER["HTTP_USER_AGENT"] == "contype") {
-	header("Content-type: application/pdf");
+	header("Content-type: ".$docclass->getMimeType());
 
 	exit;
 }
-
-$docclass = new libPDF();
 
 $args = array();
 for($i = 1; $i < count($items); $i++)
@@ -120,7 +134,7 @@ if( $ret === null ) {
 
 	header("HTTP/1.1 500 Server Error");
 } else {
-	header("Content-type: application/pdf");
+	header("Content-type: ".$docclass->getMimeType());
 
 	$content = $cls->Output(null, "S");
 

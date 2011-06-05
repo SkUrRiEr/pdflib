@@ -6,4 +6,5 @@
  */
 
 interface libPDFInterface {
+	public function getMimeType();
 }
