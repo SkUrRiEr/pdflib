@@ -16,7 +16,11 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->default_font = array(
 			"name" => "Arial",
 			"style" => "",
-			"size" => "10"
+			"size" => "10",
+			"background" => "#FFFFFF", /* FIXME: Changing this
+						    * doesn't change the page's
+						    * background colour */
+			"color" => "#000000"
 		);
 
 		$this->cur_line_h = null;
@@ -32,6 +36,8 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null) {
+		$bg = false;
+
 		if( $fontstyle != null ) {
 			if( is_string($fontstyle) )
 				$fontstyle = array(
@@ -49,6 +55,14 @@ class libPDF extends FPDF implements libPDFInterface {
 			if( !isset($fontstyle["name"]) )
 				$fontstyle["name"] = $curfont["name"];
 
+			if( !isset($fontstyle["background"]) )
+				$fontstyle["background"] = $curfont["background"];
+			else
+				$bg = true;
+
+			if( !isset($fontstyle["color"]) )
+				$fontstyle["color"] = $curfont["color"];
+
 			$this->SetDefaultFont($fontstyle);
 		}
 
@@ -57,7 +71,7 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$lines = $this->SplitIntoLines($text, $width);
 
-		$this->OutputText($lines, $this->GetX(), $width, $this->GetCurrentFont(), $border, $align, $link);
+		$this->OutputText($lines, $this->GetX(), $width, $this->GetCurrentFont(), $border, $align, $link, $bg);
 
 		if( $fontstyle != null )
 			$this->SetDefaultFont($curfont);
@@ -194,6 +208,9 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	public function SetDefaultFont($name = null, $style = null, $size = null) {
+		$bgcolor = $this->default_font["background"];
+		$color = $this->default_font["color"];
+
 		if( is_array($name) ) {
 			if( isset($name["size"]) )
 				$size = $name["size"];
@@ -204,6 +221,12 @@ class libPDF extends FPDF implements libPDFInterface {
 				$style = $name["style"];
 			else
 				$style = $this->default_font["style"];
+
+			if( isset($name["background"]) )
+				$bgcolor = $name["background"];
+
+			if( isset($name["color"]) )
+				$color = $name["color"];
 
 			if( isset($name["name"]) )
 				$name = $name["name"];
@@ -221,6 +244,8 @@ class libPDF extends FPDF implements libPDFInterface {
 		}
 
 		$this->SetFont($name, $style, $size);
+		$this->SetFillColor($bgcolor);
+		$this->SetTextColor($color);
 	}
 
 	public function GetCurrentFont() {
@@ -232,7 +257,9 @@ class libPDF extends FPDF implements libPDFInterface {
 		return array(
 			"name" => $this->FontFamily,
 			"style" => $style,
-			"size" => $this->FontSizePt
+			"size" => $this->FontSizePt,
+			"background" => $this->GetFillColor(),
+			"color" => $this->GetTextColor()
 		);
 	}
 
@@ -294,7 +321,8 @@ class libPDF extends FPDF implements libPDFInterface {
 					$saved_defered[$item["x"]] = array(
 						"x" => $item["x"],
 						"width" => $item["width"],
-						"border" => $item["border"]
+						"border" => $item["border"],
+						"background" => $item["background"]
 					);
 
 					if( strpos($item["border"], "B") !== false )
@@ -310,7 +338,7 @@ class libPDF extends FPDF implements libPDFInterface {
 			$this->excess_text = array();
 
 			foreach($set as $item)
-				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"]);
+				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"], $item["bg"]);
 
 			if( count($this->defered_borders) > 0 )
 				foreach($this->defered_borders as $item)
@@ -368,7 +396,7 @@ class libPDF extends FPDF implements libPDFInterface {
 
 	// Helper functions
 
-	private function OutputText($lines, $x, $width, $fontstyle, $border, $align, $link) {
+	private function OutputText($lines, $x, $width, $fontstyle, $border, $align, $link, $bg) {
 		$this->SetDefaultFont($fontstyle);
 
 		$cur_line_h = 0;
@@ -410,7 +438,7 @@ class libPDF extends FPDF implements libPDFInterface {
 
 				$this->SetX($x);
 
-				$this->Cell($width, $h, $line, $curborder, 0, $align, 0, $link);
+				$this->Cell($width, $h, $line, $curborder, 0, $align, $bg, $link);
 			}
 
 		if( $this->cur_line_h < $cur_line_h )
@@ -429,24 +457,31 @@ class libPDF extends FPDF implements libPDFInterface {
 				"fontstyle" => $fontstyle,
 				"border" => $border,
 				"align" => $align,
-				"link" => $link
+				"link" => $link,
+				"bg" => $bg
 			);
 
-			if( $output && $border !== 0 && $border != "" )
+			if( $output && ( ($border !== 0 && $border != "") || $bg) )
 				$this->defered_borders[] = array(
 					"x" => $x,
 					"width" => $width,
-					"border" => str_replace("B", "", $border)
+					"border" => str_replace("B", "", $border),
+					"background" => $bg ? $fontstyle["background"] : null
 				);
-		} else if( !$this->InHeader && !$this->InFooter && $output && $border !== 0 && $border != "" )
+		} else if( !$this->InHeader && !$this->InFooter && $output && ( ($border !== 0 && $border != "") || $bg ) )
 			$this->defered_borders[] = array(
 				"x" => $x,
 				"width" => $width,
-				"border" => $border
+				"border" => $border,
+				"background" => $bg ? $fontstyle["background"] : null
 			);
 	}
 
 	private function handleDeferedBorders() {
+		// TODO: This overwrites any text within cells that have
+		// backgrounds - we really need to record how much we've
+		// already written and only draw more if needed.
+
 		if( count($this->defered_borders) == 0 )
 			return;
 
@@ -457,7 +492,16 @@ class libPDF extends FPDF implements libPDFInterface {
 		foreach($this->defered_borders as $item) {
 			$this->SetX($item["x"]);
 
-			$this->Cell($item["width"], $h, "", $item["border"]);
+			if( isset($item["background"]) ) {
+				$sbg = $this->GetFillColor();
+
+				$this->SetFillColor($item["background"]);
+			}
+
+			$this->Cell($item["width"], $h, "", $item["border"], null, null, isset($item["background"]));
+
+			if( isset($item["background"]) )
+				$this->SetFillColor($sbg);
 		}
 
 		$this->defered_borders = array();
@@ -469,6 +513,9 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		if( is_array($r) )
 			return $r;
+
+		if( is_string($r) && $g == null && $b == null )
+			return parseHTMLColour($r);
 
 		if( $g == null || $b == null || ($r == $g && $g == $b) )
 			return array("red" => $r, "green" => null, "blue" => null);
