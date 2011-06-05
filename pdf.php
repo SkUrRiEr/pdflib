@@ -136,7 +136,7 @@ if( $ret === null ) {
 } else {
 	header("Content-type: ".$docclass->getMimeType());
 
-	$content = $cls->Output(null, "S");
+	$content = $docclass->getContent();
 
 	$hr->set($content);
 

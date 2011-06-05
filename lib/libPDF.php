@@ -569,4 +569,8 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		return $lines;
 	}
+
+	public function getContent() {
+		return $this->Output(null, "S");
+	}
 }
