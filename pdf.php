@@ -76,11 +76,12 @@ switch(strtolower($extension)) {
 // Set up the environment for htmlResponse 
 define("IS_AJAX", true);
 
-if($_SERVER["HTTP_USER_AGENT"] == "contype") {
+// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
+/*if($_SERVER["HTTP_USER_AGENT"] == "contype") {
 	header("Content-type: ".$docclass->getMimeType());
 
 	exit;
-}
+}*/
 
 $args = array();
 for($i = 1; $i < count($items); $i++)
@@ -114,6 +115,13 @@ if( $cls == null ) {
 	$args = $items;
 }
 
+// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
+if($_SERVER["HTTP_USER_AGENT"] == "contype") {
+	header("Content-type: ".$cls->getMimeType());
+
+	exit;
+}
+
 $ret = $cls->display($args);
 
 if( $ret != null && $ret != false ) {
@@ -134,13 +142,17 @@ if( $ret === null ) {
 
 	header("HTTP/1.1 500 Server Error");
 } else {
-	header("Content-type: ".$docclass->getMimeType());
+	// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
+	header("Content-type: ".$cls->getMimeType());
+	//header("Content-type: ".$docclass->getMimeType());
 
-	$content = $docclass->getContent();
+	$content = $cls->getContent();
+	//$content = $docclass->getContent();
 
 	$hr->set($content);
 
-	header("Content-Disposition: inline; filename=".$name.".".$docclass->getExtension().";");
+	header("Content-Disposition: inline; filename=".$name.".".$cls->getExtension().";");
+	//header("Content-Disposition: inline; filename=".$name.".".$docclass->getExtension().";");
 	header("Content-Length: ".strlen($content));
 }
 
