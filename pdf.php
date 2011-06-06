@@ -140,7 +140,7 @@ if( $ret === null ) {
 
 	$hr->set($content);
 
-	header("Content-Disposition: inline; filename=".$name.".pdf;");
+	header("Content-Disposition: inline; filename=".$name.".".$docclass->getExtension().";");
 	header("Content-Length: ".strlen($content));
 }
 
