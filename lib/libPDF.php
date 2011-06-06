@@ -35,6 +35,10 @@ class libPDF extends FPDF implements libPDFInterface {
 		return "application/pdf";
 	}
 
+	public function getExtension() {
+		return "pdf";
+	}
+
 	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null) {
 		$bg = false;
 
