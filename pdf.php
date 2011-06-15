@@ -83,6 +83,9 @@ define("IS_AJAX", true);
 	exit;
 }*/
 
+$hr = new htmlResponse(true, true);
+$hr->setCache(true);
+
 $args = array();
 for($i = 1; $i < count($items); $i++)
 	$args[] = $items[$i];
@@ -130,8 +133,6 @@ if( $ret != null && $ret != false ) {
 	if( !$name )
 		$ret = $name;
 }
-
-$hr = new htmlResponse(true, true);
 
 if( $ret === null ) {
 	$hr->set("<html><head><title>PDF Page</title></head><body><h1>PDF Not Found</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>");
