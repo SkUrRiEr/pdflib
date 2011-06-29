@@ -46,6 +46,8 @@
  * to get the PDF data.
  */
 
+session_cache_limiter("private_no_expire");
+
 require_once("includes/config.php");
 require_once("pdf/lib/pdfBase.php");
 require_once("lib/htmlResponse.class.php");
@@ -78,13 +80,13 @@ define("IS_AJAX", true);
 
 // FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
 /*if($_SERVER["HTTP_USER_AGENT"] == "contype") {
-	header("Content-type: ".$docclass->getMimeType());
+	header("Content-Type: ".$docclass->getMimeType());
 
 	exit;
 }*/
 
 $hr = new htmlResponse(true, true);
-$hr->setCache(true);
+//$hr->setCache(true);
 
 $args = array();
 for($i = 1; $i < count($items); $i++)
@@ -120,8 +122,7 @@ if( $cls == null ) {
 
 // FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
 if($_SERVER["HTTP_USER_AGENT"] == "contype") {
-	header("Content-type: ".$cls->getMimeType());
-
+	header("Content-Type: ".$cls->getMimeType()); 
 	exit;
 }
 
@@ -144,8 +145,8 @@ if( $ret === null ) {
 	header("HTTP/1.1 500 Server Error");
 } else {
 	// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
-	header("Content-type: ".$cls->getMimeType());
-	//header("Content-type: ".$docclass->getMimeType());
+	header("Content-Type: ".$cls->getMimeType());
+	//header("Content-Type: ".$docclass->getMimeType());
 
 	$content = $cls->getContent();
 	//$content = $docclass->getContent();
