@@ -36,6 +36,10 @@ abstract class pdfBase {
 		return $this->pdf;
 	}
 
+	public function getETag($args) {
+		return null;
+	}
+
 	// Pass through method calls to $this->pdf
 	public function __call($method, $arguments) {
 		if( method_exists($this->pdf, $method) )
