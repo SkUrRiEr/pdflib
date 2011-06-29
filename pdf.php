@@ -120,6 +120,11 @@ if( $cls == null ) {
 	$args = $items;
 }
 
+$etag = $cls->getETag($args);
+
+if( $etag != null )
+	header("ETag: \"".$etag."\"");
+
 // FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
 if($_SERVER["HTTP_USER_AGENT"] == "contype") {
 	header("Content-Type: ".$cls->getMimeType()); 
