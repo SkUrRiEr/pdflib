@@ -112,7 +112,7 @@ if( $class != null && file_which("pdf/".$class.".php") ) {
 if( $cls == null ) {
 	require_once("pdf/fallback.php");
 
-	$cls = new fallback();
+	$cls = new fallback($class, $docclass);
 
 	if( !is_subclass_of($cls, "pdfBase") )
 		$cls = null;
