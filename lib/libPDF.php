@@ -479,22 +479,20 @@ class libPDF extends FPDF implements libPDFInterface {
 					"x" => $x,
 					"width" => $width,
 					"border" => str_replace("B", "", $border),
-					"background" => $bg ? $fontstyle["background"] : null
+					"background" => $bg ? $fontstyle["background"] : null,
+					"h" => $cur_line_h
 				);
 		} else if( !$this->InHeader && !$this->InFooter && $output && ( ($border !== 0 && $border != "") || $bg ) )
 			$this->defered_borders[] = array(
 				"x" => $x,
 				"width" => $width,
 				"border" => $border,
-				"background" => $bg ? $fontstyle["background"] : null
+				"background" => $bg ? $fontstyle["background"] : null,
+				"h" => $cur_line_h
 			);
 	}
 
 	private function handleDeferedBorders() {
-		// TODO: This overwrites any text within cells that have
-		// backgrounds - we really need to record how much we've
-		// already written and only draw more if needed.
-
 		if( count($this->defered_borders) == 0 )
 			return;
 
@@ -509,12 +507,34 @@ class libPDF extends FPDF implements libPDFInterface {
 				$sbg = $this->GetFillColor();
 
 				$this->SetFillColor($item["background"]);
+
+				if( isset($item["h"]) ) {
+					$y = $this->GetY();
+
+					$this->SetXY($item["x"], $y + $item["h"]);
+
+					$sh = $h;
+					$h -= $item["h"];
+
+					$b = $item["border"];
+					$item["border"] = 0;
+				}
 			}
 
-			$this->Cell($item["width"], $h, "", $item["border"], null, null, isset($item["background"]));
+			if( $h > 0 )
+				$this->Cell($item["width"], $h, "", $item["border"], null, null, isset($item["background"]));
 
-			if( isset($item["background"]) )
+			if( isset($item["background"]) ) {
 				$this->SetFillColor($sbg);
+
+				if( isset($item["h"]) ) {
+					$this->SetXY($item["x"], $y);
+
+					$h = $sh;
+
+					$this->Cell($item["width"], $h, "", $b);
+				}
+			}
 		}
 
 		$this->defered_borders = array();
