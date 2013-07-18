@@ -49,9 +49,9 @@ function parseHTMLColour($colour) {
 		$green = $regs[2];
 		$blue = $regs[3];
 	} else if( preg_match("/^#([0123456789ABCDEF]{3})$/i", $colour, $regs) ) {
-		$red = $regs[1][0];
-		$green = $regs[1][1];
-		$blue = $regs[1][2];
+		$red = $regs[1][0].$regs[1][0];
+		$green = $regs[1][1].$regs[1][1];
+		$blue = $regs[1][2].$regs[1][2];
 	}
 
 	if( isset($red) ) {
@@ -60,12 +60,6 @@ function parseHTMLColour($colour) {
 		$out["red"] = hexdec($red);
 		$out["green"] = hexdec($green);
 		$out["blue"] = hexdec($blue);
-
-		if( strlen($red) == 1 ) {
-			$out["red"] *= 16;
-			$out["green"] *= 16;
-			$out["blue"] *= 16;
-		}
 
 		return $out;
 	}
