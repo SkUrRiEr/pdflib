@@ -9,6 +9,7 @@ class libPDF extends FPDF implements libPDFInterface {
 	private $defered_borders;
 	private $cur_line_h;
 	private $angle;
+	private $defaultOrientation;
 
 	public function __construct($orientation = "P", $unit = "mm", $format = "A4") {
 		parent::__construct($orientation, $unit, $format);
@@ -294,9 +295,17 @@ class libPDF extends FPDF implements libPDFInterface {
 		}
        	}
 
+	public function setDefaultOrientation($o) {
+		if( is_string($o) && $o != "" && (($o = strtoupper($o[0])) == "P" || $o == "L") )
+			$this->defaultOrientation = $o;
+	}
+
 	// Overidden base class functions
 
-	public function AddPage($o = "", $f = "") {
+	public function AddPage($o = null, $f = "") {
+		if( $o == null )
+			$o = $this->defaultOrientation;
+
 		parent::AddPage($o, $f);
 
 		$this->cur_line_h = 0;
