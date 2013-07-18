@@ -41,8 +41,6 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null) {
-		$bg = false;
-
 		if( $fontstyle != null ) {
 			if( is_string($fontstyle) )
 				$fontstyle = array(
@@ -62,14 +60,16 @@ class libPDF extends FPDF implements libPDFInterface {
 
 			if( !isset($fontstyle["background"]) )
 				$fontstyle["background"] = $curfont["background"];
-			else
-				$bg = true;
 
 			if( !isset($fontstyle["color"]) )
 				$fontstyle["color"] = $curfont["color"];
 
 			$this->SetDefaultFont($fontstyle);
 		}
+
+		$c = $this->GetFillColor();
+
+		$bg = $c["red"] != 255 || $c["green"] != 255 || $c["blue"] != 255;
 
 		if( $width == null )
 			$width = $this->w - $this->rMargin - $this->GetX();
