@@ -206,7 +206,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->curFlowLineAlign = null;
 	}
 
-	public function HTMLText($html, $bstyle = array()) {
+	public function HTMLText($html, $bstyle = array(), $align = "L") {
 		$doc = new DOMDocument();
 
 		$doc->loadXML("<root/>");
@@ -237,7 +237,7 @@ class libPDF extends FPDF implements libPDFInterface {
 				else
 					$style = $bstyle;
 
-				$this->FlowText($cur->nodeValue, $style);
+				$this->FlowText($cur->nodeValue, $style, $align);
 			} else if( $cur->nodeType == XML_ELEMENT_NODE )
 				switch(strtolower($cur->nodeName)) {
 					case "b":
