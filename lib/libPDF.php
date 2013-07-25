@@ -27,6 +27,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->cur_line_h = null;
 		$this->excess_text = array();
 		$this->defered_borders = array();
+		$this->curFlowLine = array();
 		$this->angle = 0;
 
 		$this->SetDefaultFont();
@@ -82,7 +83,7 @@ class libPDF extends FPDF implements libPDFInterface {
 			$this->SetDefaultFont($curfont);
 	}
 
-	public function FlowText($text, $style = null) {
+	public function FlowText($text, $style = null, $align = "L") {
 		if( $style != null ) {
 			$curfont = $this->GetCurrentFont();
 
@@ -93,6 +94,8 @@ class libPDF extends FPDF implements libPDFInterface {
 
 			$this->SetDefaultFont($style);
 		}
+
+		$realstyle = $this->GetCurrentFont();
 
 		$h = $this->FontSizePt / 2;
 
@@ -121,7 +124,26 @@ class libPDF extends FPDF implements libPDFInterface {
 			if( $chunk != "" ) {
 				$cw = $this->GetStringWidth($chunk);
 
-				$this->Cell($cw, $h, $chunk);
+				if( $align == "L" || $this->curFlowLineAlign == "L" ) {
+					$this->curFlowLineAlign = "L";
+
+					$this->emitCurFlowLine();
+
+					// Make left alignment infectious
+					$this->curFlowLineAlign = "L";
+
+					$this->Cell($cw, $h, $chunk);
+				} else {
+					$this->curFlowLineAlign = $align;
+					$this->curFlowLine[] = array(
+						"x" => $x,
+						"w" => $cw,
+						"style" => $realstyle,
+						"text" => $chunk
+					);
+
+					$this->SetX($x + $cw);
+				}
 			}
 
 			if( $this->GetY() + ($h * 2) > $this->PageBreakTrigger )
@@ -133,6 +155,55 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		if( $style != null )
 			$this->SetDefaultFont($curfont);
+	}
+
+	private function emitCurFlowLine() {
+		if( count($this->curFlowLine) == 0 ) {
+			$this->curFlowLineAlign = null;
+
+			return;
+		}
+
+		$firstset = current($this->curFlowLine);
+
+		$x = $firstset["x"];
+
+		$curfont = $this->GetCurrentFont();
+
+		$offset = 0;
+
+		switch($this->curFlowLineAlign) {
+		case "C":
+		case "R":
+			$tw = 0;
+
+			foreach($this->curFlowLine as $set)
+				$tw += $set["w"];
+
+			$mw = $this->w - $this->rMargin - $x;
+
+			$offset = $mw - $tw;
+
+			if( $this->curFlowLineAlign == "C" )
+				$offset /= 2;
+
+			// Fall through
+		default:
+			$this->SetX($x + $offset);
+
+			foreach($this->curFlowLine as $set) {
+				if( $set["style"] != null )
+					$this->SetDefaultFont($set["style"]);
+
+				$this->Cell($set["w"], $this->FontSizePt / 2, $set["text"]);
+
+				if( $set["style"] != null )
+					$this->SetDefaultFont($curfont);
+			}
+		}
+
+		$this->curFlowLine = array();
+		$this->curFlowLineAlign = null;
 	}
 
 	public function HTMLText($html, $bstyle = array()) {
@@ -317,6 +388,8 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	public function Ln($h = null) {
+		$this->emitCurFlowLine();
+
 		if( $this->InHeader || $this->InFooter ) {
 			if( $h === null )
 				$h = $this->cur_line_h;
