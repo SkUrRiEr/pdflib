@@ -135,7 +135,7 @@ class libPDF extends FPDF implements libPDFInterface {
 			$this->SetDefaultFont($curfont);
 	}
 
-	public function HTMLText($html) {
+	public function HTMLText($html, $bstyle = array()) {
 		$doc = new DOMDocument();
 
 		$doc->loadXML("<root/>");
@@ -148,7 +148,7 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$cur = $doc->documentElement;
 
-		$style = array();
+		$hs = array();
 
 		$inpara = null;
 
@@ -161,17 +161,22 @@ class libPDF extends FPDF implements libPDFInterface {
 
 				$inpara = 1;
 
-				$this->FlowText($cur->nodeValue, implode("", $style));
+				if( count($hs) > 0 )
+					$style = array_merge($bstyle, array("style" => implode("", $hs)));
+				else
+					$style = $bstyle;
+
+				$this->FlowText($cur->nodeValue, $style);
 			} else if( $cur->nodeType == XML_ELEMENT_NODE )
 				switch(strtolower($cur->nodeName)) {
 					case "b":
-						array_push($style, "B");
+						array_push($hs, "B");
 						break;
 					case "i":
-						array_push($style, "I");
+						array_push($hs, "I");
 						break;
 					case "u":
-						array_push($style, "U");
+						array_push($hs, "U");
 						break;
 					case "br":
 						$this->Ln();
@@ -199,7 +204,7 @@ class libPDF extends FPDF implements libPDFInterface {
 							case "b":
 							case "i":
 							case "u":
-								array_pop($style);
+								array_pop($hs);
 								break;
 							case "p":
 								$inpara = 0;
