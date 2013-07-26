@@ -235,9 +235,11 @@ class libPDF extends FPDF implements libPDFInterface {
 
 				$inpara = 1;
 
-				if( count($hs) > 0 )
+				if( count($hs) > 0 ) {
 					$style = array_merge($bstyle, array("style" => implode("", $hs)));
-				else
+					if( isset($bstyle["style"]) )
+						$style["style"] .= $bstyle["style"];
+				} else
 					$style = $bstyle;
 
 				$this->FlowText($cur->nodeValue, $style, $align);
