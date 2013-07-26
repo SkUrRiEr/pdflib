@@ -10,6 +10,8 @@ class libPDF extends FPDF implements libPDFInterface {
 	private $cur_line_h;
 	private $angle;
 	private $defaultOrientation;
+	private $curFlowLine;
+	private $curFlowLineAlign;
 
 	public function __construct($orientation = "P", $unit = "mm", $format = "A4") {
 		parent::__construct($orientation, $unit, $format);
@@ -28,6 +30,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->excess_text = array();
 		$this->defered_borders = array();
 		$this->curFlowLine = array();
+		$this->curFlowLineAlign = null;
 		$this->angle = 0;
 
 		$this->SetDefaultFont();
