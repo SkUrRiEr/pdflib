@@ -210,6 +210,13 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	public function HTMLText($html, $bstyle = array(), $align = "L") {
+		if( $bstyle == null )
+			$bstyle = array();
+		else if( !is_array($bstyle))
+			$bstyle = array(
+				"style" => $bstyle
+			);
+
 		$doc = new DOMDocument();
 
 		$doc->loadXML("<root/>");
