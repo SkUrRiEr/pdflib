@@ -445,7 +445,7 @@ class libPDF extends FPDF implements libPDFInterface {
 					$this->defered_borders[] = $item;
 		}
 
-		$this->handleDeferedBorders();
+		$this->handleDeferedBorders($h);
 
 		$this->SetDefaultFont($curfont);
 
@@ -575,11 +575,15 @@ class libPDF extends FPDF implements libPDFInterface {
 			);
 	}
 
-	private function handleDeferedBorders() {
+	private function handleDeferedBorders($lh = null) {
 		if( count($this->defered_borders) == 0 )
 			return;
 
-		$h = $this->cur_line_h;
+		if( $lh != null )
+			$h = max($this->cur_line_h, $lh);
+		else
+			$h = $this->cur_line_h;
+
 		if($this->GetY() + $h > $this->PageBreakTrigger)
 			$h = $this->PageBreakTrigger - $this->GetY();
 
