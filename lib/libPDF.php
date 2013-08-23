@@ -127,30 +127,18 @@ class libPDF extends FPDF implements libPDFInterface {
 			if( $chunk != "" ) {
 				$cw = $this->GetStringWidth($chunk);
 
-				if( $align == "L" || $this->curFlowLineAlign == "L" ) {
-					$this->curFlowLineAlign = "L";
-
-					$this->emitCurFlowLine();
-
-					// Make left alignment infectious
-					$this->curFlowLineAlign = "L";
-
-					$this->Cell($cw, $h, $chunk);
-				} else {
+				if( $align == "L" || $this->curFlowLineAlign != "L" )
 					$this->curFlowLineAlign = $align;
-					$this->curFlowLine[] = array(
-						"x" => $x,
-						"w" => $cw,
-						"style" => $realstyle,
-						"text" => $chunk
-					);
 
-					$this->SetX($x + $cw);
-				}
+				$this->curFlowLine[] = array(
+					"x" => $x,
+					"w" => $cw,
+					"style" => $realstyle,
+					"text" => $chunk
+				);
+
+				$this->SetX($x + $cw);
 			}
-
-			if( $this->GetY() + ($h * 2) > $this->PageBreakTrigger )
-				$this->AddPage();
 
 			if( $text != "" )
 				$this->Ln();
@@ -165,6 +153,17 @@ class libPDF extends FPDF implements libPDFInterface {
 			$this->curFlowLineAlign = null;
 
 			return;
+		}
+
+		if( $this->GetY() + $this->cur_line_h > $this->PageBreakTrigger ) {
+			// AddPage wipes cur_line_h for good reasons however we
+			// need it to be valid to handle the eventual Ln() at
+			// the end of this line.
+			$clh = $this->cur_line_h;
+
+			$this->AddPage();
+
+			$this->cur_line_h = $clh;
 		}
 
 		$firstset = current($this->curFlowLine);
