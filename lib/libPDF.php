@@ -667,8 +667,20 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		if( $string == "" )
 			return null;
-		else if( $this->GetStringWidth($string) < $width )
-			return array($string);
+
+		$append = "";
+
+		if( ($p = strpos($string, "\n")) !== FALSE ) {
+			$append = substr($string, $p + 1);
+			$string = substr($string, 0, $p);
+		}
+
+		if( $this->GetStringWidth($string) < $width ) {
+			if( $append != "" )
+				return array($string, $append);
+			else
+				return array($string);
+		}
 
 		$str = "";
 		$strlen = 0;
@@ -689,7 +701,7 @@ class libPDF extends FPDF implements libPDFInterface {
 			$regs = null;
 		}
 
-		return array($str, $string);
+		return array($str, $string."\n".$append);
 	}
 
 	public function SplitIntoLines($input, $width) {
