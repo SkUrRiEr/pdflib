@@ -140,8 +140,10 @@ class libPDF extends FPDF implements libPDFInterface {
 				$this->SetX($x + $cw);
 			}
 
-			if( $text != "" )
+			if( $text != "" ) {
 				$this->Ln();
+				$this->cur_line_h = $h;
+			}
 		}
 
 		if( $style != null )
