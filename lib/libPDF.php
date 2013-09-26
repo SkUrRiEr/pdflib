@@ -222,6 +222,8 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$doc->loadXML("<root/>");
 
+		$html = preg_replace("/&(?!amp;)/", "&amp;", $html);
+
 		$f = $doc->createDocumentFragment();
 		if( !$f->appendXML($html) )
 			return;
