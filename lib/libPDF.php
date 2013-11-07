@@ -665,6 +665,49 @@ class libPDF extends FPDF implements libPDFInterface {
 
 	// Utility functions
 
+	public function GetStringWidthLines($string, $lines) {
+		$words = explode(" ", $string);
+
+		if( count($words) <= 1 )
+			return $this->GetStringWidth($string);
+
+		$min = 0;
+
+		for( $count = count($words); $count >= 1; $count-- ) {
+			for( $str = array(), $j = 0; $j < $count; $j++)
+				$str[] = $words[$j];
+
+			$max = $cur = $this->GetStringWidth($s = implode(" ", $str));
+
+			for( $i = 2; $i <= $lines && $j < count($words); $i++ ) {
+				for( $str = array(); ($l = $this->GetStringWidth(implode(" ", $str))) <= $max && $j < count($words); $j++ )
+					$str[] = $words[$j];
+
+				if( $l > $max ) {
+					if( count($str) > 1 ) {
+						$j--;
+						array_pop($str);
+					}
+
+					$l = $this->GetStringWidth(implode(" ", $str));
+
+					if( $l > $cur )
+						$cur = $l;
+				}
+			}
+
+			if( $j < count($words) )
+				break;
+
+			if( $cur >= $min && $min != 0 )
+				break;
+
+			$min = $cur;
+		}
+
+		return $min;
+	}
+
 	public function SplitTextAt($string, $width) {
 		$strings = array();
 
