@@ -468,8 +468,6 @@ class libPDF extends FPDF implements libPDFInterface {
 			foreach($set as $item)
 				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"], $item["bg"], $item["valigndata"]);
 
-			$this->cur_max_h = 0;
-
 			if( count($this->defered_borders) > 0 )
 				foreach($this->defered_borders as $item)
 					unset($saved_defered[$item["x"]]);
@@ -478,6 +476,8 @@ class libPDF extends FPDF implements libPDFInterface {
 				foreach($saved_defered as $item)
 					$this->defered_borders[] = $item;
 		}
+
+		$this->cur_max_h = 0;
 
 		$this->handleDeferedBorders($h);
 
