@@ -27,6 +27,8 @@ class libPDF extends FPDF implements libPDFInterface {
 		);
 
 		$this->cur_line_h = null;
+		$this->cur_max_h = 0;
+		$this->valign_defered = array();
 		$this->excess_text = array();
 		$this->defered_borders = array();
 		$this->curFlowLine = array();
@@ -44,7 +46,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		return "pdf";
 	}
 
-	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null) {
+	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null, $valign = "T") {
 		if( $fontstyle != null ) {
 			if( is_string($fontstyle) )
 				$fontstyle = array(
@@ -80,7 +82,7 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$lines = $this->SplitIntoLines($text, $width);
 
-		$this->OutputText($lines, $this->GetX(), $width, $this->GetCurrentFont(), $border, $align, $link, $bg);
+		$this->OutputText($lines, $this->GetX(), $width, $this->GetCurrentFont(), $border, $align, $link, $bg, $valign);
 
 		if( $fontstyle != null )
 			$this->SetDefaultFont($curfont);
@@ -420,6 +422,25 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$curfont = $this->GetCurrentFont();
 
+		if( count($this->valign_defered) > 0 ) {
+			$max_h = $this->cur_max_h;
+
+			foreach($this->valign_defered as $item) {
+				$lh = $item["fontstyle"]["size"] / 2;
+
+				$th = count($item["text"]) * $lh;
+
+				$offset = $max_h - $th;
+
+				if( $item["valigndata"] == "M" )
+					$offset /= 2;
+
+				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"], $item["bg"], $offset);
+			}
+
+			$this->valign_defered = array();
+		}
+
 		while( count($this->excess_text) > 0 ) {
 			$saved_defered = array();
 
@@ -445,7 +466,9 @@ class libPDF extends FPDF implements libPDFInterface {
 			$this->excess_text = array();
 
 			foreach($set as $item)
-				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"], $item["bg"]);
+				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"], $item["bg"], $item["valigndata"]);
+
+			$this->cur_max_h = 0;
 
 			if( count($this->defered_borders) > 0 )
 				foreach($this->defered_borders as $item)
@@ -503,14 +526,42 @@ class libPDF extends FPDF implements libPDFInterface {
 
 	// Helper functions
 
-	private function OutputText($lines, $x, $width, $fontstyle, $border, $align, $link, $bg) {
+	private function OutputText($lines, $x, $width, $fontstyle, $border, $align, $link, $bg, $valigndata) {
 		$this->SetDefaultFont($fontstyle);
 
 		$cur_line_h = 0;
+		$h = $this->FontSizePt / 2;
+
+		$cur_max_h = count($lines) * $h;
+
+		if( $cur_max_h > $this->cur_max_h )
+			$this->cur_max_h = $cur_max_h;
+
+		if( $this->InHeader || $this->InFooter ) // TODO: untested
+			$valigndata = 0;
+		else if( is_string($valigndata) ) {
+			if( $valigndata != "T" ) {
+				$this->valign_defered[] = array(
+					"text" => $lines,
+					"x" => $x,
+					"width" => $width,
+					"fontstyle" => $fontstyle,
+					"border" => $border,
+					"align" => $align,
+					"link" => $link,
+					"bg" => $bg,
+					"valigndata" => $valigndata
+				);
+
+				$this->SetX($x + $width);
+
+				return;
+			} else
+				$valigndata = 0;
+		}
+
 		$next_page = array();
 		$curborder = "";
-
-		$h = $this->FontSizePt / 2;
 
 		if( $this->InHeader || $this->InFooter )
 			$curborder = $border;
@@ -527,6 +578,27 @@ class libPDF extends FPDF implements libPDFInterface {
 		}
 
 		$output = false;
+
+		$starty = $this->GetY();
+
+		if( $valigndata > 0 ) {
+			$offset = min($valigndata, $this->PageBreakTrigger - $h - $this->GetY());
+
+			if( $valigndata > $offset && $offset < $this->cur_line_h )
+				$offset = $this->cur_line_h;
+
+			$cur_line_h += $offset;
+			$v = $valigndata;
+			$valigndata -= $offset;
+
+			$this->SetX($x);
+
+			$this->Cell($width, $offset, "", $curborder, 0, $align, $bg, $link);
+			parent::Ln($offset);
+
+			$output = true;
+			$curborder = "";
+		}
 
 		foreach($lines as $i => $line)
 			if( !$this->InHeader && !$this->InFooter && $this->GetY() + ($h * 2) > $this->PageBreakTrigger )
@@ -551,7 +623,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		if( $this->cur_line_h < $cur_line_h )
 			$this->cur_line_h = $cur_line_h;
 
-		$this->SetXY($x + $width, $this->GetY() - $cur_line_h + $h);
+		$this->SetXY($x + $width, $starty);
 
 		if( !$output )
 			$border .= $curborder;
@@ -565,7 +637,8 @@ class libPDF extends FPDF implements libPDFInterface {
 				"border" => $border,
 				"align" => $align,
 				"link" => $link,
-				"bg" => $bg
+				"bg" => $bg,
+				"valigndata" => $valigndata
 			);
 
 			if( $output && ( ($border !== 0 && $border != "") || $bg) )
