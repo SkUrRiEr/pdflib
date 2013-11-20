@@ -1,14 +1,17 @@
 <?php
 
 include_once("lib/libPDFInterface.php");
+include_once("lib/libPDFListener.php");
 
-abstract class pdfBase {
+abstract class pdfBase implements libPDFListener {
 	private $name;
 	private $message;
 	private $pdf;
 
 	public function __construct(libPDFInterface $pdf) {
 		$this->pdf = $pdf;
+
+		$pdf->addListener($this);
 
 		$this->name = FALSE;
 		$this->message = "No reason specified.";
@@ -38,6 +41,12 @@ abstract class pdfBase {
 
 	public function getETag($args) {
 		return null;
+	}
+
+	public function onHeader() {
+	}
+
+	public function onFooter() {
 	}
 
 	// Pass through method calls to $this->pdf

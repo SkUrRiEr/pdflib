@@ -13,6 +13,8 @@ class libPDF extends FPDF implements libPDFInterface {
 	private $curFlowLine;
 	private $curFlowLineAlign;
 
+	private $listeners;
+
 	public function __construct($orientation = "P", $unit = "mm", $format = "A4") {
 		parent::__construct($orientation, $unit, $format);
 
@@ -36,6 +38,8 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->angle = 0;
 
 		$this->SetDefaultFont();
+
+		$this->listeners = array();
 	}
 
 	public function getMimeType() {
@@ -44,6 +48,10 @@ class libPDF extends FPDF implements libPDFInterface {
 
 	public function getExtension() {
 		return "pdf";
+	}
+
+	public function addListener(libPDFListener $class) {
+		$this->listeners[] = $class;
 	}
 
 	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null, $valign = "T") {
@@ -402,6 +410,14 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		parent::AddPage($o, $f);
 
+		/* The standard way to do headers is to mod the tMargin to
+		 * exclude the amount of space the header will take up, then
+		 * mod Y to move the cursor to the right spot, emit the header
+		 * then leave. Let's fix it back up so stuff starts at the
+		 * right point.
+		 */
+		$this->SetY($this->tMargin);
+
 		$this->cur_line_h = 0;
 	}
 
@@ -522,6 +538,20 @@ class libPDF extends FPDF implements libPDFInterface {
 
 	public function GetTextColor() {
 		return $this->decodePDFColour($this->TextColor, "g", "rg");
+	}
+
+	public function Footer() {
+		parent::Footer();
+
+		foreach($this->listeners as $l)
+			$l->onFooter();
+	}
+
+	public function Header() {
+		parent::Header();
+
+		foreach($this->listeners as $l)
+			$l->onHeader();
 	}
 
 	// Helper functions
