@@ -235,6 +235,10 @@ class libPDF extends FPDF implements libPDFInterface {
 		$html = preg_replace("/&(?!([a-z\d]+|#\d+|#x[a-f\d]+);)/i", "&amp;", $html);
 		$html = preg_replace("/<br\s*>/i", "<br/>", $html);
 
+		mb_substitute_character("none");
+
+		$html = mb_convert_encoding($html, "UTF-8", "UTF-8");
+
 		$f = $doc->createDocumentFragment();
 		if( !$f->appendXML($html) )
 			return;
