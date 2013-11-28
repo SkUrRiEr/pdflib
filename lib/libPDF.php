@@ -445,6 +445,9 @@ class libPDF extends FPDF implements libPDFInterface {
 		if( count($this->valign_defered) > 0 ) {
 			$max_h = $this->cur_max_h;
 
+			if( $h != null && $h > $max_h )
+				$max_h = $h;
+
 			foreach($this->valign_defered as $item) {
 				$lh = $item["fontstyle"]["size"] / 2;
 
