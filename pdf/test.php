@@ -2,7 +2,7 @@
 
 include_once("pdf/lib/pdfBase.php");
 
-class page extends pdfBase {
+class test extends pdfBase {
 	public function __construct(libPDFInterface $pdf) {
 		parent::__construct($pdf);
 
