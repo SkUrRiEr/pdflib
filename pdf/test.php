@@ -162,12 +162,23 @@ class test extends pdfBase {
 				$this->pageRect();
 			}
 
+		$mw = $this->w - $this->lMargin - $this->rMargin;
+
+		$this->TableCell("This is testing the <b>new</b> HTML in table functionality.", $mw / 2, null, "L", 1);
+		$this->Ln();
+
+		$this->TableCell("<b>How about</b> we <i>test</i> things like <u>this</u>.<br/>This is centered text", $mw / 3, null, "C", 1, null, "B");
+		$this->TableCell("<p>We can even do paragraphs and stuff like that. It's awesomely awesome!</p><p>This is a second paragraph. It even has <b>bold</b>, <u>underlined</u> and <i>italic</i> text in it.</p><p>We can also break in<br/>the middle of lines!</p>", null, null, "R", 1);
+		$this->Ln();
+
+		$this->AddPage();
+
 		$this->FlowText("Let's test all the fancy functions of tables!");
 		$this->Ln();
 		$this->Ln();
 
-		$this->TableCell("We're testing vertical alignment:\n\nIt's awesome!", 50, null, "C", 1);
-		$this->TableCell("This is middle aligned.", 50, array(
+		$this->TableCell("We're testing vertical alignment:\n\nIt's awesome!", 45, null, "C", 1);
+		$this->TableCell("This is middle aligned.", 70, array(
 			"background" => "#FFFF00"
 		), "L", 1, null, "M");
 		$this->TableCell("This is bottom aligned.", null, array(

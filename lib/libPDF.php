@@ -54,7 +54,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->listeners[] = $class;
 	}
 
-	public function TableCell($text, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null, $valign = "T") {
+	public function TableCell($html, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null, $valign = "T") {
 		if( $fontstyle != null ) {
 			if( is_string($fontstyle) )
 				$fontstyle = array(
@@ -79,7 +79,8 @@ class libPDF extends FPDF implements libPDFInterface {
 				$fontstyle["color"] = $curfont["color"];
 
 			$this->SetDefaultFont($fontstyle);
-		}
+		} else
+			$curfont = $fontstyle = $this->GetCurrentFont();
 
 		$c = $this->GetFillColor();
 
@@ -88,9 +89,112 @@ class libPDF extends FPDF implements libPDFInterface {
 		if( $width == null )
 			$width = $this->w - $this->rMargin - $this->GetX();
 
-		$lines = $this->SplitIntoLines($text, $width);
+		$doc = new DOMDocument();
 
-		$this->OutputText($lines, $this->GetX(), $width, $this->GetCurrentFont(), $border, $align, $link, $bg, $valign);
+		$doc->loadXML("<root/>");
+
+		if( strip_tags($html) == $html )
+			$html = nl2br(htmlspecialchars($html));
+		else {
+			$html = preg_replace("/&(?!([a-z\d]+|#\d+|#x[a-f\d]+);)/i", "&amp;", $html);
+			$html = preg_replace("/<br\s*>/i", "<br/>", $html);
+		}
+
+		mb_substitute_character("none");
+
+		$html = mb_convert_encoding($html, "UTF-8", "UTF-8");
+
+		$f = $doc->createDocumentFragment();
+
+		if( !$f->appendXML($html) )
+			return;
+
+		$doc->documentElement->appendChild($f);
+
+		$cur = $doc->documentElement;
+
+		$hs = array();
+
+		$inpara = null;
+
+		$chunks = array();
+
+		while( $cur != null ) {
+			if( $cur->nodeType == XML_TEXT_NODE ) {
+				if( $inpara === 0 )
+					$chunks[count($chunks) - 1]["newlines"] += 2;
+
+				$inpara = 1;
+
+				if( count($hs) > 0 ) {
+					$style = array_merge($fontstyle, array("style" => implode("", $hs)));
+					if( isset($fontstyle["style"]) )
+						$style["style"] .= $fontstyle["style"];
+				} else
+					$style = $fontstyle;
+
+				$chunks[] = array(
+					"text" => $cur->nodeValue,
+					"style" => $style,
+					"newlines" => 0
+				);
+			} else if( $cur->nodeType == XML_ELEMENT_NODE )
+				switch(strtolower($cur->nodeName)) {
+					case "b":
+						array_push($hs, "B");
+						break;
+					case "i":
+						array_push($hs, "I");
+						break;
+					case "u":
+						array_push($hs, "U");
+						break;
+					case "br":
+						$chunks[count($chunks) - 1]["newlines"]++;
+						break;
+					case "p":
+						if( $inpara !== null && $inpara < 2 )
+							$chunks[count($chunks) - 1]["newlines"] += 2;
+
+						$inpara = 2;
+						break;
+				}
+
+			if( $cur->firstChild )
+				$cur = $cur->firstChild;
+			else if( $cur->nextSibling )
+				$cur = $cur->nextSibling;
+			else {
+				while( $cur != null && $cur->nextSibling == null) {
+					$cur = $cur->parentNode;
+
+					if( $cur != null )
+						switch(strtolower($cur->nodeName)) {
+							case "b":
+							case "i":
+							case "u":
+								array_pop($hs);
+								break;
+							case "p":
+								$inpara = 0;
+						}
+				}
+
+				if( $cur != null )
+					$cur = $cur->nextSibling;
+			}
+		}
+
+		$lines = $this->countChunkedLines($chunks, $width);
+
+		$h = $fontstyle["size"] / 2;
+
+		$cellheight = $lines * $h;
+
+		if( $cellheight > $this->cur_max_h )
+			$this->cur_max_h = $cellheight;
+
+		$this->OutputText($chunks, $this->GetX(), $width, $border, $align, $link, $bg, $valign, $cellheight);
 
 		if( $fontstyle != null )
 			$this->SetDefaultFont($curfont);
@@ -389,16 +493,14 @@ class libPDF extends FPDF implements libPDFInterface {
 				$max_h = $h;
 
 			foreach($this->valign_defered as $item) {
-				$lh = $item["fontstyle"]["size"] / 2;
-
-				$th = count($item["text"]) * $lh;
+				$th = $item["height"];
 
 				$offset = $max_h - $th;
 
 				if( $item["valigndata"] == "M" )
 					$offset /= 2;
 
-				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"], $item["bg"], $offset);
+				$this->OutputText($item["chunks"], $item["x"], $item["width"], $item["border"], $item["align"], $item["link"], $item["bg"], $offset, $item["height"]);
 			}
 
 			$this->valign_defered = array();
@@ -429,7 +531,7 @@ class libPDF extends FPDF implements libPDFInterface {
 			$this->excess_text = array();
 
 			foreach($set as $item)
-				$this->OutputText($item["text"], $item["x"], $item["width"], $item["fontstyle"], $item["border"], $item["align"], $item["link"], $item["bg"], $item["valigndata"]);
+				$this->OutputText($item["chunks"], $item["x"], $item["width"], $item["border"], $item["align"], $item["link"], $item["bg"], $item["valigndata"], $item["height"]);
 
 			if( count($this->defered_borders) > 0 )
 				foreach($this->defered_borders as $item)
@@ -563,31 +665,21 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->curFlowLineAlign = null;
 	}
 
-	private function OutputText($lines, $x, $width, $fontstyle, $border, $align, $link, $bg, $valigndata) {
-		$this->SetDefaultFont($fontstyle);
-
-		$cur_line_h = 0;
-		$h = $this->FontSizePt / 2;
-
-		$cur_max_h = count($lines) * $h;
-
-		if( $cur_max_h > $this->cur_max_h )
-			$this->cur_max_h = $cur_max_h;
-
+	private function OutputText($chunks, $x, $width, $border, $align, $link, $bg, $valigndata, $cellheight = null) {
 		if( $this->InHeader || $this->InFooter ) // TODO: untested
 			$valigndata = 0;
 		else if( is_string($valigndata) ) {
 			if( $valigndata != "T" ) {
 				$this->valign_defered[] = array(
-					"text" => $lines,
+					"chunks" => $chunks,
 					"x" => $x,
 					"width" => $width,
-					"fontstyle" => $fontstyle,
 					"border" => $border,
 					"align" => $align,
 					"link" => $link,
 					"bg" => $bg,
-					"valigndata" => $valigndata
+					"valigndata" => $valigndata,
+					"height" => $cellheight
 				);
 
 				$this->SetX($x + $width);
@@ -596,6 +688,8 @@ class libPDF extends FPDF implements libPDFInterface {
 			} else
 				$valigndata = 0;
 		}
+
+		$cur_line_h = 0;
 
 		$next_page = array();
 		$curborder = "";
@@ -619,10 +713,16 @@ class libPDF extends FPDF implements libPDFInterface {
 		$starty = $this->GetY();
 
 		if( $valigndata > 0 ) {
-			$offset = min($valigndata, $this->PageBreakTrigger - $h - $this->GetY());
+			$firstchunk = $chunks[0];
 
-			if( $valigndata > $offset && $offset < $this->cur_line_h )
-				$offset = $this->cur_line_h;
+			$this->SetDefaultFont($firstchunk["style"]);
+
+			$offset = min($valigndata, $this->cur_line_h);
+
+			$rh = $this->PageBreakTrigger - ($this->FontSizePt / 2) - $this->GetY();
+
+			if( $offset > $rh )
+				$offset = $rh;
 
 			$cur_line_h += $offset;
 			$v = $valigndata;
@@ -637,45 +737,130 @@ class libPDF extends FPDF implements libPDFInterface {
 			$curborder = "";
 		}
 
-		foreach($lines as $i => $line)
-			if( !$this->InHeader && !$this->InFooter && $this->GetY() + ($h * 2) > $this->PageBreakTrigger )
-				$next_page[] = $line;
+		$this->SetX($x);
+
+		$cx = 0;
+
+		$first = true;
+
+		$lengths = $this->getChunkedLineLengths($chunks, $width);
+		$j = 0;
+
+		$lineended = true;
+
+		foreach($chunks as $i => $chunk)
+			if( count($next_page) > 0 )
+				$next_page[] = $chunk;
 			else {
-				$output = true;
+				$this->SetDefaultFont($chunk["style"]);
 
-				if( $i != 0 ) {
-					parent::Ln($h);
+				$text = $chunk["text"];
 
-					if( !$this->InHeader && !$this->InFooter )
+				while( $this->InHeader || $this->InFooter || $this->GetY() + $this->FontSizePt < $this->PageBreakTrigger ) {
+					$lineended = false;
+
+					$lines = $this->SplitTextAt($text, $width - $cx, false);
+
+					$cw = $w = $this->GetStringWidth($lines[0]);
+
+					if( $cx == 0 )
+						$lines[0] = ltrim($lines[0]);
+
+					$talign = $align;
+
+					if( isset($lines[1]) || $chunk["newlines"] > 0 || $i == count($chunks) - 1) {
+						$cw = $width - $cx;
+						$lines[0] = rtrim($lines[0]);
+
+						if( $cx != 0 && $align == "C" )
+							$talign = "L";
+					} else if( $cx == 0 && $align != "L" ) {
+						$offset = $width - $lengths[$j];
+
+						if( $align == "C" ) {
+							$offset /= 2;
+							$talign = "R";
+						}
+
+						$cw += $offset;
+						$cx = $offset;
+					}
+
+					$cx += $w;
+
+					$this->Cell($cw, $this->FontSizePt / 2, $lines[0], $curborder, 0, $talign, $bg, $link);
+
+					$output = true;
+
+					if( isset($lines[1]) ) {
+						$lineended = true;
+
 						$curborder = "";
+
+						parent::Ln();
+
+						$j++;
+						$cx = 0;
+
+						$cur_line_h += $this->FontSizePt / 2;
+
+						$this->SetX($x);
+
+						$text = $lines[1];
+					} else {
+						$text = "";
+
+						break;
+					}
 				}
 
-				$cur_line_h += $h;
+				if( $text != "" )
+					$next_page[] = array(
+						"text" => $text,
+						"style" => $chunk["style"],
+						"newlines" => $chunk["newlines"]
+					);
+				else if( $chunk["newlines"] > 0 ) {
+					$lineended = true;
 
-				$this->SetX($x);
+					$curborder = "";
 
-				$this->Cell($width, $h, $line, $curborder, 0, $align, $bg, $link);
+					$cx = 0;
+
+					for( $i = 0; $i < $chunk["newlines"] && $this->GetY() + $this->FontSizePt < $this->PageBreakTrigger; $i++ ) {
+						$j++;
+						parent::Ln();
+
+						$cur_line_h += $this->FontSizePt / 2;
+					}
+
+					$this->SetX($x);
+				}
 			}
+
+		if( $output && !$lineended ) {
+			parent::Ln();
+
+			$cur_line_h += $this->FontSizePt / 2;
+		} else
+			$border .= $curborder;
 
 		if( $this->cur_line_h < $cur_line_h )
 			$this->cur_line_h = $cur_line_h;
 
 		$this->SetXY($x + $width, $starty);
 
-		if( !$output )
-			$border .= $curborder;
-
 		if( $next_page != array() ) {
 			$this->excess_text[] = array(
-				"text" => $next_page,
+				"chunks" => $next_page,
 				"x" => $x,
 				"width" => $width,
-				"fontstyle" => $fontstyle,
 				"border" => $border,
 				"align" => $align,
 				"link" => $link,
 				"bg" => $bg,
-				"valigndata" => $valigndata
+				"valigndata" => $valigndata,
+				"height" => $this->countChunkedLines($next_page, $width) * $this->FontSizePt / 2
 			);
 
 			if( $output && ( ($border !== 0 && $border != "") || $bg) )
@@ -683,7 +868,7 @@ class libPDF extends FPDF implements libPDFInterface {
 					"x" => $x,
 					"width" => $width,
 					"border" => str_replace("B", "", $border),
-					"background" => $bg ? $fontstyle["background"] : null,
+					"background" => $bg ? $this->GetFillColor() : null,
 					"h" => $cur_line_h
 				);
 		} else if( !$this->InHeader && !$this->InFooter && $output && ( ($border !== 0 && $border != "") || $bg ) )
@@ -691,7 +876,7 @@ class libPDF extends FPDF implements libPDFInterface {
 				"x" => $x,
 				"width" => $width,
 				"border" => $border,
-				"background" => $bg ? $fontstyle["background"] : null,
+				"background" => $bg ? $this->GetFillColor() : null,
 				"h" => $cur_line_h
 			);
 	}
@@ -819,7 +1004,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		return $min;
 	}
 
-	public function SplitTextAt($string, $width) {
+	public function SplitTextAt($string, $width, $splitatnl = true) {
 		$strings = array();
 
 		if( $string == "" )
@@ -827,7 +1012,7 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$append = "";
 
-		if( ($p = strpos($string, "\n")) !== FALSE ) {
+		if( $splitatnl && ($p = strpos($string, "\n")) !== FALSE ) {
 			$append = substr($string, $p + 1);
 			$string = substr($string, 0, $p);
 		}
@@ -911,6 +1096,56 @@ class libPDF extends FPDF implements libPDFInterface {
 			}
 
 		return $lines;
+	}
+
+	private function countChunkedLines($chunks, $width) {
+		return count($this->getChunkedLineLengths($chunks, $width));
+	}
+
+	private function getChunkedLineLengths($chunks, $width) {
+		$x = 0;
+		$text = "x";
+
+		$curfont = $this->GetCurrentFont();
+
+		$lengths = array();
+
+		foreach($chunks as $item) {
+			$this->SetDefaultFont($item["style"]);
+
+			$text = $item["text"];
+
+			if( ($w = $this->GetStringWidth($text)) < $width - $x )
+				$x += $w;
+			else {
+				while(count($lines = $this->SplitTextAt($text, $width - $x, false)) > 1) {
+					$lengths[] = $x + $this->GetStringWidth($lines[0]);
+
+					$x = 0;
+					$text = $lines[1];
+				}
+
+				$text = $lines[0];
+
+				$x = $this->GetStringWidth($text);
+			}
+
+			if( $item["newlines"] > 0 ) {
+				$lengths[] = $x;
+
+				$x = 0;
+
+				for($i = 1; $i < $item["newlines"]; $i++)
+					$lengths[] = 0;
+			}
+		}
+
+		if( strlen($text) > 0 )
+			$lengths[] = $x;
+
+		$this->SetDefaultFont($curfont);
+
+		return $lengths;
 	}
 
 	public function getContent() {
