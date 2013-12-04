@@ -89,101 +89,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		if( $width == null )
 			$width = $this->w - $this->rMargin - $this->GetX();
 
-		$doc = new DOMDocument();
-
-		$doc->loadXML("<root/>");
-
-		if( strip_tags($html) == $html )
-			$html = nl2br(htmlspecialchars($html));
-		else {
-			$html = preg_replace("/&(?!([a-z\d]+|#\d+|#x[a-f\d]+);)/i", "&amp;", $html);
-			$html = preg_replace("/<br\s*>/i", "<br/>", $html);
-		}
-
-		mb_substitute_character("none");
-
-		$html = mb_convert_encoding($html, "UTF-8", "UTF-8");
-
-		$f = $doc->createDocumentFragment();
-
-		if( !$f->appendXML($html) )
-			return;
-
-		$doc->documentElement->appendChild($f);
-
-		$cur = $doc->documentElement;
-
-		$hs = array();
-
-		$inpara = null;
-
-		$chunks = array();
-
-		while( $cur != null ) {
-			if( $cur->nodeType == XML_TEXT_NODE ) {
-				if( $inpara === 0 )
-					$chunks[count($chunks) - 1]["newlines"] += 2;
-
-				$inpara = 1;
-
-				if( count($hs) > 0 ) {
-					$style = array_merge($fontstyle, array("style" => implode("", $hs)));
-					if( isset($fontstyle["style"]) )
-						$style["style"] .= $fontstyle["style"];
-				} else
-					$style = $fontstyle;
-
-				$chunks[] = array(
-					"text" => $cur->nodeValue,
-					"style" => $style,
-					"newlines" => 0
-				);
-			} else if( $cur->nodeType == XML_ELEMENT_NODE )
-				switch(strtolower($cur->nodeName)) {
-					case "b":
-						array_push($hs, "B");
-						break;
-					case "i":
-						array_push($hs, "I");
-						break;
-					case "u":
-						array_push($hs, "U");
-						break;
-					case "br":
-						$chunks[count($chunks) - 1]["newlines"]++;
-						break;
-					case "p":
-						if( $inpara !== null && $inpara < 2 )
-							$chunks[count($chunks) - 1]["newlines"] += 2;
-
-						$inpara = 2;
-						break;
-				}
-
-			if( $cur->firstChild )
-				$cur = $cur->firstChild;
-			else if( $cur->nextSibling )
-				$cur = $cur->nextSibling;
-			else {
-				while( $cur != null && $cur->nextSibling == null) {
-					$cur = $cur->parentNode;
-
-					if( $cur != null )
-						switch(strtolower($cur->nodeName)) {
-							case "b":
-							case "i":
-							case "u":
-								array_pop($hs);
-								break;
-							case "p":
-								$inpara = 0;
-						}
-				}
-
-				if( $cur != null )
-					$cur = $cur->nextSibling;
-			}
-		}
+		$chunks = $this->SplitHTMLChunks($html, $fontstyle);
 
 		$lines = $this->countChunkedLines($chunks, $width);
 
@@ -604,6 +510,113 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	// Helper functions
+
+	private function SplitHTMLChunks($html, $fontstyle) {
+		if( $html == "" )
+			return array(array(
+					"text" => "",
+					"style" => $fontstyle,
+					"newlines" => 0
+			));
+
+		$doc = new DOMDocument();
+
+		$doc->loadXML("<root/>");
+
+		if( strip_tags($html) == $html )
+			$html = nl2br(htmlspecialchars($html));
+		else {
+			$html = preg_replace("/&(?!([a-z\d]+|#\d+|#x[a-f\d]+);)/i", "&amp;", $html);
+			$html = preg_replace("/<br\s*>/i", "<br/>", $html);
+		}
+
+		mb_substitute_character("none");
+
+		$html = mb_convert_encoding($html, "UTF-8", "UTF-8");
+
+		$f = $doc->createDocumentFragment();
+
+		if( !$f->appendXML($html) )
+			return;
+
+		$doc->documentElement->appendChild($f);
+
+		$cur = $doc->documentElement;
+
+		$hs = array();
+
+		$inpara = null;
+
+		$chunks = array();
+
+		while( $cur != null ) {
+			if( $cur->nodeType == XML_TEXT_NODE ) {
+				if( $inpara === 0 )
+					$chunks[count($chunks) - 1]["newlines"] += 2;
+
+				$inpara = 1;
+
+				if( count($hs) > 0 ) {
+					$style = array_merge($fontstyle, array("style" => implode("", $hs)));
+					if( isset($fontstyle["style"]) )
+						$style["style"] .= $fontstyle["style"];
+				} else
+					$style = $fontstyle;
+
+				$chunks[] = array(
+					"text" => $cur->nodeValue,
+					"style" => $style,
+					"newlines" => 0
+				);
+			} else if( $cur->nodeType == XML_ELEMENT_NODE )
+				switch(strtolower($cur->nodeName)) {
+				case "b":
+					array_push($hs, "B");
+					break;
+				case "i":
+					array_push($hs, "I");
+					break;
+				case "u":
+					array_push($hs, "U");
+					break;
+				case "br":
+					$chunks[count($chunks) - 1]["newlines"]++;
+					break;
+				case "p":
+					if( $inpara !== null && $inpara < 2 )
+						$chunks[count($chunks) - 1]["newlines"] += 2;
+
+					$inpara = 2;
+					break;
+				}
+
+			if( $cur->firstChild )
+				$cur = $cur->firstChild;
+			else if( $cur->nextSibling )
+				$cur = $cur->nextSibling;
+			else {
+				while( $cur != null && $cur->nextSibling == null) {
+					$cur = $cur->parentNode;
+
+					if( $cur != null )
+						switch(strtolower($cur->nodeName)) {
+						case "b":
+						case "i":
+						case "u":
+							array_pop($hs);
+							break;
+						case "p":
+							$inpara = 0;
+						}
+				}
+
+				if( $cur != null )
+					$cur = $cur->nextSibling;
+			}
+		}
+
+		return $chunks;
+	}
 
 	private function emitCurFlowLine() {
 		if( count($this->curFlowLine) == 0 ) {
