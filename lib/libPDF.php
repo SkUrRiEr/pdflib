@@ -160,66 +160,6 @@ class libPDF extends FPDF implements libPDFInterface {
 			$this->SetDefaultFont($curfont);
 	}
 
-	private function emitCurFlowLine() {
-		if( count($this->curFlowLine) == 0 ) {
-			$this->curFlowLineAlign = null;
-
-			return;
-		}
-
-		if( $this->GetY() + $this->cur_line_h > $this->PageBreakTrigger ) {
-			// AddPage wipes cur_line_h for good reasons however we
-			// need it to be valid to handle the eventual Ln() at
-			// the end of this line.
-			$clh = $this->cur_line_h;
-
-			$this->AddPage();
-
-			$this->cur_line_h = $clh;
-		}
-
-		$firstset = current($this->curFlowLine);
-
-		$x = $firstset["x"];
-
-		$curfont = $this->GetCurrentFont();
-
-		$offset = 0;
-
-		switch($this->curFlowLineAlign) {
-		case "C":
-		case "R":
-			$tw = 0;
-
-			foreach($this->curFlowLine as $set)
-				$tw += $set["w"];
-
-			$mw = $this->w - $this->rMargin - $x;
-
-			$offset = $mw - $tw;
-
-			if( $this->curFlowLineAlign == "C" )
-				$offset /= 2;
-
-			// Fall through
-		default:
-			$this->SetX($x + $offset);
-
-			foreach($this->curFlowLine as $set) {
-				if( $set["style"] != null )
-					$this->SetDefaultFont($set["style"]);
-
-				$this->Cell($set["w"], $this->FontSizePt / 2, $set["text"]);
-
-				if( $set["style"] != null )
-					$this->SetDefaultFont($curfont);
-			}
-		}
-
-		$this->curFlowLine = array();
-		$this->curFlowLineAlign = null;
-	}
-
 	public function HTMLText($html, $bstyle = array(), $align = "L") {
 		if( $bstyle == null )
 			$bstyle = array();
@@ -562,6 +502,66 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	// Helper functions
+
+	private function emitCurFlowLine() {
+		if( count($this->curFlowLine) == 0 ) {
+			$this->curFlowLineAlign = null;
+
+			return;
+		}
+
+		if( $this->GetY() + $this->cur_line_h > $this->PageBreakTrigger ) {
+			// AddPage wipes cur_line_h for good reasons however we
+			// need it to be valid to handle the eventual Ln() at
+			// the end of this line.
+			$clh = $this->cur_line_h;
+
+			$this->AddPage();
+
+			$this->cur_line_h = $clh;
+		}
+
+		$firstset = current($this->curFlowLine);
+
+		$x = $firstset["x"];
+
+		$curfont = $this->GetCurrentFont();
+
+		$offset = 0;
+
+		switch($this->curFlowLineAlign) {
+		case "C":
+		case "R":
+			$tw = 0;
+
+			foreach($this->curFlowLine as $set)
+				$tw += $set["w"];
+
+			$mw = $this->w - $this->rMargin - $x;
+
+			$offset = $mw - $tw;
+
+			if( $this->curFlowLineAlign == "C" )
+				$offset /= 2;
+
+			// Fall through
+		default:
+			$this->SetX($x + $offset);
+
+			foreach($this->curFlowLine as $set) {
+				if( $set["style"] != null )
+					$this->SetDefaultFont($set["style"]);
+
+				$this->Cell($set["w"], $this->FontSizePt / 2, $set["text"]);
+
+				if( $set["style"] != null )
+					$this->SetDefaultFont($curfont);
+			}
+		}
+
+		$this->curFlowLine = array();
+		$this->curFlowLineAlign = null;
+	}
 
 	private function OutputText($lines, $x, $width, $fontstyle, $border, $align, $link, $bg, $valigndata) {
 		$this->SetDefaultFont($fontstyle);
