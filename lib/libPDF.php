@@ -1056,7 +1056,23 @@ class libPDF extends FPDF implements libPDFInterface {
 			$regs = null;
 		}
 
-		return array($str, $string."\n".$append);
+		if( $str == "" ) {
+			$str = $regs[1];
+
+			if( isset($regs[2]) )
+				$string = $regs[2];
+			else
+				$string = "";
+		}
+
+		if( $append != "" ) {
+			if( $string == "" )
+				$string = $append;
+			else
+				$string .= "\n".$append;
+		}
+
+		return array($str, $string);
 	}
 
 	public function SplitIntoLines($input, $width) {
