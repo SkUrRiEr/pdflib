@@ -856,7 +856,7 @@ class libPDF extends FPDF implements libPDFInterface {
 				while( $this->InHeader || $this->InFooter || $this->GetY() + $this->FontSizePt < $this->PageBreakTrigger ) {
 					$lineended = false;
 
-					$lines = $this->SplitTextAt($text, $width - $cx, false);
+					$lines = $this->SplitTextAt($text, $width - $cx, false, false);
 
 					$cw = $w = $this->GetStringWidth($lines[0]);
 
@@ -1101,7 +1101,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		return $min;
 	}
 
-	public function SplitTextAt($string, $width, $splitatnl = true) {
+	public function SplitTextAt($string, $width, $splitatnl = true, $allowempty = true) {
 		$strings = array();
 
 		if( $string == "" )
@@ -1140,7 +1140,7 @@ class libPDF extends FPDF implements libPDFInterface {
 			$regs = null;
 		}
 
-		if( $str == "" ) {
+		if( $str == "" && !$allowempty ) {
 			$str = $regs[1];
 
 			if( isset($regs[2]) )
