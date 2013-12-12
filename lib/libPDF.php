@@ -37,9 +37,93 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->curFlowLineAlign = null;
 		$this->angle = 0;
 
+		$this->loadFonts();
+
 		$this->SetDefaultFont();
 
 		$this->listeners = array();
+	}
+
+	public function loadFonts() {
+		$styles = array("", "b", "i", "bi");
+
+		foreach( array_merge(array(""), explode(PATH_SEPARATOR, get_include_path())) as $path ) {
+			if( !is_dir($path."pdf/fonts") )
+				continue;
+
+			$d = opendir($path."pdf/fonts");
+
+			while($f = readdir($d))
+				if( preg_match("/^(.*)\.php$/", $f, $regs) )
+					foreach($styles as $s)
+						if( file_exists($path."pdf/fonts/".$regs[1].$s.".php") )
+							$this->AddFont($regs[1], $s);
+		}
+	}
+
+	public function _loadfont($font) {
+		$defaultFontpath = $this->fontpath;
+
+		if( file_exists("pdf/fonts/".$font) )
+			$this->fontpath = "pdf/fonts/";
+
+		foreach(explode(PATH_SEPARATOR, get_include_path()) as $path)
+			if( file_exists($path."pdf/fonts/".$font) ) {
+				$this->fontpath = $path."pdf/fonts/";
+
+				break;
+			}
+
+		$data = parent::_loadfont($font);
+
+		if( $this->fontpath != $defaultFontpath && isset($data["file"]) ) {
+			$a = $this->pathSplit($defaultFontpath);
+			$b = $this->pathSplit($this->fontpath);
+
+			$set = array();
+
+			while( true ) {
+				$ca = array_pop($a);
+				$cb = array_pop($b);
+
+				if( $ca === NULL && $cb === NULL )
+					break;
+
+				if( $ca === $cb )
+					continue;
+
+				if( $cb !== NULL )
+					$set[] = $cb;
+
+				if( $ca !== null )
+					array_unshift($set, "..");
+			}
+
+			$data["file"] = implode($set, "/")."/".$data["file"];
+		}
+
+		$this->fontpath = $defaultFontpath;
+
+		return $data;
+	}
+
+	private function pathSplit($str) {
+		// FIXME: May not work on Windows
+
+		$set = array();
+
+		if( $str[0] != "/" )
+			$str = dirname($_SERVER["SCRIPT_FILENAME"])."/".$str;
+
+		while(strlen($str) > 1 && $str != "/") {
+			$set[] = basename($str);
+			$str = dirname($str);
+		}
+
+		if( $str != "/" )
+			$set[] = $str;
+
+		return $set;
 	}
 
 	public function getMimeType() {
