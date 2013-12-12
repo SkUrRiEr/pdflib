@@ -19,7 +19,7 @@ class libPDF extends FPDF implements libPDFInterface {
 		parent::__construct($orientation, $unit, $format);
 
 		$this->default_font = array(
-			"name" => "Arial",
+			"name" => "Helvetica",
 			"style" => "",
 			"size" => "10",
 			"background" => "#FFFFFF", /* FIXME: Changing this
