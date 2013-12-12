@@ -67,9 +67,8 @@ abstract class pdfBase implements libPDFListener {
 			$this->pdf->$name = $value;
 
 			return;
-		}
-
-		throw new Exception("Property not found");
+		} else
+			$this->$name = $value;
 	}
 
 	public function __get($name) {
