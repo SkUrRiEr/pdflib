@@ -512,17 +512,6 @@ class libPDF extends FPDF implements libPDFInterface {
 	// Helper functions
 
 	private function SplitHTMLChunks($html, $fontstyle) {
-		if( $html == "" )
-			return array(array(
-					"text" => "",
-					"style" => $fontstyle,
-					"newlines" => 0
-			));
-
-		$doc = new DOMDocument();
-
-		$doc->loadXML("<root/>");
-
 		if( strip_tags($html) == $html )
 			$html = nl2br(htmlspecialchars($html));
 		else {
@@ -534,10 +523,21 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$html = mb_convert_encoding($html, "UTF-8", "UTF-8");
 
+		if( $html == "" )
+			return array(array(
+					"text" => "",
+					"style" => $fontstyle,
+					"newlines" => 0
+			));
+
+		$doc = new DOMDocument();
+
+		$doc->loadXML("<root/>");
+
 		$f = $doc->createDocumentFragment();
 
 		if( !$f->appendXML($html) )
-			return;
+			return array();
 
 		$doc->documentElement->appendChild($f);
 
