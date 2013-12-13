@@ -146,6 +146,24 @@ class test extends pdfBase {
 			"name" => "times"
 		), "C");
 		$this->Ln();
+		$this->Ln();
+
+		$fonts = array(
+			"Courier",
+			"Helvetica",
+			"Times",
+			"Symbol",
+			"Zapfdingbats",
+			"Arial",
+			"Verdana"
+		);
+
+		foreach($fonts as $font) {
+			$this->HTMLText("This is testing various different fonts: <b>".$font."</b>", array(
+				"name" => $font
+			));
+			$this->Ln();
+		}
 
 		$this->pageRect();
 
