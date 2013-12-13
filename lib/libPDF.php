@@ -61,15 +61,12 @@ class libPDF extends FPDF implements libPDFInterface {
 			if(!isset($this->fonts[$fontkey]) && !in_array($f, $this->CoreFonts)) {
 				$file = str_replace(' ', '', $f).strtolower($s).'.php';
 
-				if( file_exists("pdf/fonts/".$file) )
-					$this->AddFont($f, $s);
-				else
-					foreach(explode(PATH_SEPARATOR, get_include_path()) as $path)
-						if( file_exists($path."pdf/fonts/".$file) ) {
-							$this->AddFont($f, $s);
+				foreach(explode(PATH_SEPARATOR, get_include_path()) as $path)
+					if( file_exists($path."/pdf/fonts/".$file) ) {
+						$this->AddFont($f, $s);
 
-							break;
-						}
+						break;
+					}
 			}
 		}
 
@@ -79,12 +76,9 @@ class libPDF extends FPDF implements libPDFInterface {
 	public function _loadfont($font) {
 		$defaultFontpath = $this->fontpath;
 
-		if( file_exists("pdf/fonts/".$font) )
-			$this->fontpath = "pdf/fonts/";
-
 		foreach(explode(PATH_SEPARATOR, get_include_path()) as $path)
-			if( file_exists($path."pdf/fonts/".$font) ) {
-				$this->fontpath = $path."pdf/fonts/";
+			if( file_exists($path."/pdf/fonts/".$font) ) {
+				$this->fontpath = $path."/pdf/fonts/";
 
 				break;
 			}
@@ -126,6 +120,8 @@ class libPDF extends FPDF implements libPDFInterface {
 		// FIXME: May not work on Windows
 
 		$set = array();
+
+		$str = str_replace("/./", "/", $str);
 
 		if( $str[0] != "/" )
 			$str = dirname($_SERVER["SCRIPT_FILENAME"])."/".$str;
