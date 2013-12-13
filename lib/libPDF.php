@@ -42,6 +42,20 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->listeners = array();
 	}
 
+	public function getAvailableFonts() {
+		$fonts = array();
+
+		foreach(explode(PATH_SEPARATOR, get_include_path()) as $path) {
+			$d = opendir($path."/pdf/fonts");
+
+			while($f = readdir($d))
+				if( preg_match("/^(.*)\.php$/", $f, $regs) )
+					$fonts[] = $regs[1];
+		}
+
+		return $fonts;
+	}
+
 	public function SetFont($family, $style='', $size=0) {
 		if($family != '') {
 			$f = strtolower($family);
