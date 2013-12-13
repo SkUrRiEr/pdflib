@@ -1256,7 +1256,7 @@ class libPDF extends FPDF implements libPDFInterface {
 			if( ($w = $this->GetStringWidth($text)) < $width - $x )
 				$x += $w;
 			else {
-				while(count($lines = $this->SplitTextAt($text, $width - $x, false)) > 1) {
+				while(count($lines = $this->SplitTextAt($text, $width - $x, false, false)) > 1) {
 					$lengths[] = $x + $this->GetStringWidth($lines[0]);
 
 					$x = 0;
