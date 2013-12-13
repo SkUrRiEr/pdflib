@@ -37,28 +37,43 @@ class libPDF extends FPDF implements libPDFInterface {
 		$this->curFlowLineAlign = null;
 		$this->angle = 0;
 
-		$this->loadFonts();
-
 		$this->SetDefaultFont();
 
 		$this->listeners = array();
 	}
 
-	public function loadFonts() {
-		$styles = array("", "b", "i", "bi");
+	public function SetFont($family, $style='', $size=0) {
+		if($family != '') {
+			$f = strtolower($family);
+			$s = strtoupper($style);
 
-		foreach( array_merge(array(""), explode(PATH_SEPARATOR, get_include_path())) as $path ) {
-			if( !is_dir($path."pdf/fonts") )
-				continue;
+			if(strpos($s, 'U') !== false)
+				$s = str_replace('U', '', $s);
 
-			$d = opendir($path."pdf/fonts");
+			if($s == 'IB')
+				$s = 'BI';
 
-			while($f = readdir($d))
-				if( preg_match("/^(.*)\.php$/", $f, $regs) )
-					foreach($styles as $s)
-						if( file_exists($path."pdf/fonts/".$regs[1].$s.".php") )
-							$this->AddFont($regs[1], $s);
+			if($this->FontFamily == $f && $this->FontStyle == $s && $this->FontSizePt == $s)
+				return;
+
+			$fontkey = $f.$s;
+
+			if(!isset($this->fonts[$fontkey]) && !in_array($f, $this->CoreFonts)) {
+				$file = str_replace(' ', '', $f).strtolower($s).'.php';
+
+				if( file_exists("pdf/fonts/".$file) )
+					$this->AddFont($f, $s);
+				else
+					foreach(explode(PATH_SEPARATOR, get_include_path()) as $path)
+						if( file_exists($path."pdf/fonts/".$file) ) {
+							$this->AddFont($f, $s);
+
+							break;
+						}
+			}
 		}
+
+		parent::SetFont($family, $style, $size);
 	}
 
 	public function _loadfont($font) {
