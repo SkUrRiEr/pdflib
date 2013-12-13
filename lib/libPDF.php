@@ -4,7 +4,7 @@ require_once("fpdf/fpdf.php");
 require_once("lib/libPDFInterface.php");
 
 class libPDF extends FPDF implements libPDFInterface {
-	private $default_font;
+	public $default_font;
 	private $excess_text;
 	private $defered_borders;
 	private $cur_line_h;
