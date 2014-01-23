@@ -621,6 +621,8 @@ class libPDF extends FPDF implements libPDFInterface {
 	// Helper functions
 
 	private function SplitHTMLChunks($html, $fontstyle) {
+		$html = str_replace(chr(160), " ", $html);
+
 		if( strip_tags($html) == $html )
 			$html = nl2br(htmlspecialchars($html));
 		else {
