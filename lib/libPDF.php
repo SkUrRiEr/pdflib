@@ -164,6 +164,8 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	public function TableCell($html, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null, $valign = "T") {
+                $html = utf8_decode($html);
+
 		if( $fontstyle != null ) {
 			if( is_string($fontstyle) )
 				$fontstyle = array(
@@ -216,6 +218,8 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	public function FlowText($text, $style = null, $align = "L") {
+                $text = utf8_decode($text);
+
 		if( $style != null ) {
 			$curfont = $this->GetCurrentFont();
 
