@@ -790,7 +790,11 @@ class libPDF extends FPDF implements libPDFInterface {
 	}
 
 	private function OutputText($chunks, $x, $width, $border, $align, $link, $bg, $valigndata, $cellheight = null) {
-		if( $this->InHeader || $this->InFooter ) // TODO: untested
+		$lengths = $this->getChunkedLineLengths($chunks, $width);
+
+		if( count($lengths) == 0 || (count($lengths) == 1 && $lengths[0] == 0) )
+			$valigndata = 0;
+		else if( $this->InHeader || $this->InFooter ) // TODO: untested
 			$valigndata = 0;
 		else if( is_string($valigndata) ) {
 			if( $valigndata != "T" ) {
@@ -867,7 +871,6 @@ class libPDF extends FPDF implements libPDFInterface {
 
 		$first = true;
 
-		$lengths = $this->getChunkedLineLengths($chunks, $width);
 		$j = 0;
 
 		$lineended = true;
