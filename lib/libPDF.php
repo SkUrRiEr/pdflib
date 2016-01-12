@@ -1092,48 +1092,58 @@ class libPDF extends FPDF implements libPDFInterface {
 
 	// Utility functions
 
-	public function GetStringWidthLines($string, $lines) {
-		$words = explode(" ", $string);
+        public function GetStringWidthLines($string, $lines) {
+            $words = preg_split("/(\s+)/", $string, null, PREG_SPLIT_DELIM_CAPTURE);
 
-		if( count($words) <= 1 )
-			return $this->GetStringWidth($string);
+            if (count($words) <= 2 || $lines <= 1) {
+                return $this->GetStringWidth($string);
+            }
 
-		$min = 0;
+            $min = 0;
 
-		for( $count = count($words); $count >= 1; $count-- ) {
-			for( $str = array(), $j = 0; $j < $count; $j++)
-				$str[] = $words[$j];
+            $widths = array();
 
-			$max = $cur = $this->GetStringWidth($s = implode(" ", $str));
+            foreach ($words as $i => $w) {
+                if ($w == "") {
+                    $widths[$i] = 0;
+                } else {
+                    $widths[$i] = $this->GetStringWidth($w);
+                }
+            }
 
-			for( $i = 2; $i <= $lines && $j < count($words); $i++ ) {
-				for( $str = array(); ($l = $this->GetStringWidth(implode(" ", $str))) <= $max && $j < count($words); $j++ )
-					$str[] = $words[$j];
+            $maxwidth = 0;
 
-				if( $l > $max ) {
-					if( count($str) > 1 ) {
-						$j--;
-						array_pop($str);
-					}
+            for ($j = 1; $j < count($widths) && $lines > 0; $lines--) {
+                if ($j > 0) {
+                    $wset = array_slice($widths, $j);
+                } else {
+                    $wset = $widths;
+                }
+                $target = (array_sum($wset)) / $lines;
 
-					$l = $this->GetStringWidth(implode(" ", $str));
+                $l = $widths[$j - 1];
 
-					if( $l > $cur )
-						$cur = $l;
-				}
-			}
+                for (; $l < $target && $j < count($widths); $j += 2) {
+                    $l += $widths[$j] + $widths[$j + 1];
+                }
 
-			if( $j < count($words) )
-				break;
+                if ($j < count($widths)) {
+                    $cw = $widths[$j + 1];
 
-			if( $cur >= $min && $min != 0 )
-				break;
+                    if ($l - $target < $target + $cw - $l) {
+                        $j += 2;
+                    } else {
+                        $l -= $cw + $widths[$j];
+                    }
+                }
 
-			$min = $cur;
-		}
+                if ($maxwidth < $l) {
+                    $maxwidth = $l;
+                }
+            }
 
-		return $min;
-	}
+            return $maxwidth;
+        }
 
 	public function SplitTextAt($string, $width, $splitatnl = true, $allowempty = true) {
 		$strings = array();
