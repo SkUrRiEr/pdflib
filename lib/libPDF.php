@@ -1193,57 +1193,52 @@ class libPDF extends FPDF implements libPDFInterface {
 		return array($str, $string);
 	}
 
-	public function SplitIntoLines($input, $width) {
-		$inlines = explode("\n", $input);
+        public function SplitIntoLines($input, $width)
+        {
+            $inlines = explode("\n", $input);
 
-		$lines = array();
-		foreach($inlines as $line)
-			if( $line == "" )
-				$lines[] = "";
-			else {
-				while($line != "" && $this->GetStringWidth($line) > $width) {
-					$str = "";
-					$strlen = 0;
+            $lines = array();
+            foreach ($inlines as $line) {
+                if ($line == "" || $this->GetStringWidth($line) <= $width) {
+                    $lines[] = $line;
+                    continue;
+                }
 
-					while(preg_match("/^(\s*\S*\s*)(.*)$/s", $line, $regs) && ($strlen + ($len = $this->GetStringWidth($regs[1]))) < $width - 2) {
-						$str .= $regs[1];
-						$strlen += $len;
+                $set = preg_split("/(\s+)/", $line, null, PREG_SPLIT_DELIM_CAPTURE);
 
-						if( !isset($regs[2]) ) {
-							$line = "";
-							$regs = null;
+                $lengths = array();
 
-							break;
-						}
+                foreach ($set as $item) {
+                    $lengths[] = $this->GetStringWidth($item);
+                }
 
-						$line = $regs[2];
+                $outline = $set[0];
+                $outlen = $lengths[0];
 
-						$regs = null;
-					}
+                for ($i = 1; $i < count($set); $i += 2) {
+                    $wlen = $lengths[$i];
+                    $word = $set[$i];
 
-					if( $str == "" ) {
-						if( $regs == null ) {
-							$str = $line;
-							$line = "";
-						} else {
-							$str = $regs[1];
+                    if (isset($lengths[$i + 1])) {
+                        $wlen += $lengths[$i + 1];
+                        $word .= $set[$i + 1];
+                    }
 
-							if( !isset($regs[2]) )
-								$line = "";
-							else
-								$line = $regs[2];
-						}
-					}
+                    if ($outlen + $wlen > $width) {
+                        $lines[] = $outline;
+                        $outline = $set[$i + 1];
+                        $outlen = $lengths[$i + 1];
+                    } else {
+                        $outline .= $word;
+                        $outlen += $wlen;
+                    }
+                }
 
-					$lines[] = $str;
-				}
+                $lines[] = $outline;
+            }
 
-				if( $line != "" )
-					$lines[] = $line;
-			}
-
-		return $lines;
-	}
+            return $lines;
+        }
 
 	private function countChunkedLines($chunks, $width) {
 		return count($this->getChunkedLineLengths($chunks, $width));
