@@ -7,9 +7,10 @@
 
 include_once("lib/libPDFListener.php");
 
-interface libPDFInterface {
-	public function getMimeType();
-	public function getExtension();
-	public function getContent();
-	public function addListener(libPDFListener $class);
+interface libPDFInterface
+{
+    public function getMimeType();
+    public function getExtension();
+    public function getContent();
+    public function addListener(libPDFListener $class);
 }

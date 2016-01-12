@@ -8,7 +8,8 @@
  * At the moment this is headers and footers.
  */
 
-interface libPDFListener {
-	public function onHeader();
-	public function onFooter();
+interface libPDFListener
+{
+    public function onHeader();
+    public function onFooter();
 }
