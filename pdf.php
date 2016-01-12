@@ -48,9 +48,7 @@
 
 session_cache_limiter("private_no_expire");
 
-require_once("includes/config.php");
 require_once("pdf/lib/pdfBase.php");
-require_once("lib/htmlResponse.class.php");
 require_once("lib/util.php");
 
 $items = array();
@@ -75,18 +73,12 @@ switch(strtolower($extension)) {
 		$docclass = new libPDF();
 }
 
-// Set up the environment for htmlResponse 
-define("IS_AJAX", true);
-
 // FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
 /*if($_SERVER["HTTP_USER_AGENT"] == "contype") {
 	header("Content-Type: ".$docclass->getMimeType());
 
 	exit;
 }*/
-
-$hr = new htmlResponse(true, true);
-//$hr->setCache(true);
 
 $args = array();
 for($i = 1; $i < count($items); $i++)
@@ -141,11 +133,11 @@ if( $ret != null && $ret != false ) {
 }
 
 if( $ret === null ) {
-	$hr->set("<html><head><title>PDF Page</title></head><body><h1>PDF Not Found</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>");
+	$content = "<html><head><title>PDF Page</title></head><body><h1>PDF Not Found</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>";
 
 	header("HTTP/1.1 404 Page Not Found");
 } else if( $ret === FALSE ) {
-	$hr->set("<html><head><title>PDF Generation Failed</title></head><body><h1>PDF Generation Failed</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>");
+	$content = "<html><head><title>PDF Generation Failed</title></head><body><h1>PDF Generation Failed</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>";
 
 	header("HTTP/1.1 500 Server Error");
 } else {
@@ -156,11 +148,9 @@ if( $ret === null ) {
 	$content = $cls->getContent();
 	//$content = $docclass->getContent();
 
-	$hr->set($content);
-
 	header("Content-Disposition: inline; filename=\"".$name.".".$cls->getExtension()."\";");
 	//header("Content-Disposition: inline; filename=".$name.".".$docclass->getExtension().";");
 	header("Content-Length: ".strlen($content));
 }
 
-print $hr->get();
+print $content;
