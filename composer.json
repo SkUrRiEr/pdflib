@@ -1,9 +1,8 @@
 {
-  "name": "root/pdflib",
-  "description": "A basic PHP PDF library based on fpdf",
+  "name": "SkUrRiEr/pdflib",
+  "description": "A basic PHP PDF library based on FPDF",
   "require": {
-    "setasign/fpdf": "~1.8",
-    "symfony/console": "~3.0"
+    "setasign/fpdf": "~1.8"
   },
   "license": "GNU 2.1",
   "authors": [
