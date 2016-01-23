@@ -1,15 +1,15 @@
-<?php
+<?php namespace PDFLib;
 
-include_once("lib/libPDFInterface.php");
-include_once("lib/libPDFListener.php");
+use PDFLib\Interfaces\DocumentType;
+use PDFLib\Interfaces\EventListener;
 
-abstract class pdfBase implements libPDFListener
+abstract class BaseDocument implements EventListener
 {
     private $name;
     private $message;
     private $pdf;
 
-    public function __construct(libPDFInterface $pdf)
+    public function __construct(DocumentType $pdf)
     {
         $this->pdf = $pdf;
 

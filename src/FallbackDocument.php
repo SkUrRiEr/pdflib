@@ -1,9 +1,13 @@
-<?php
+<?php namespace PDFLib;
 
-include_once("pdf/lib/pdfBase.php");
-
-class fallback extends pdfBase
+class FallbackDocument extends BaseDocument
 {
+    /**
+     * FallbackDocument constructor.
+     *
+     * @param Interfaces\DocumentType $classname
+     * @param                         $docclass
+     */
     public function __construct($classname, $docclass)
     {
         parent::__construct($docclass);

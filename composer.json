@@ -13,5 +13,13 @@
       "name": "James Healey",
       "email": "jayhealey@gmail.com"
     }
-  ]
+  ],
+  "autoload": {
+    "psr-4": {
+      "PDFLib\\": "src/"
+    },
+    "files": [
+      "src/helpers.php"
+    ]
+  }
 }
