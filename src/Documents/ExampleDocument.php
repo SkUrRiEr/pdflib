@@ -1,10 +1,13 @@
-<?php
+<?php namespace PDFLib\Documents;
 
-include_once("pdf/lib/pdfBase.php");
+use PDFLib\Interfaces\DocumentType;
 
-class test extends pdfBase
+class ExampleDocument extends BaseDocument
 {
-    public function __construct(libPDFInterface $pdf)
+    /**
+     * @inherit
+     */
+    public function __construct(DocumentType $pdf)
     {
         parent::__construct($pdf);
 
@@ -12,6 +15,9 @@ class test extends pdfBase
         $this->SetTopMargin($this->tMargin + $this->FontSizePt);
     }
 
+    /**
+     * @inherit
+     */
     public function onHeader()
     {
         $this->SetDefaultFont();
@@ -19,6 +25,9 @@ class test extends pdfBase
         $this->Cell(0, 0, "This text is within the header!", 0, 1, "C");
     }
 
+    /**
+     * @inherit
+     */
     public function onFooter()
     {
         $this->SetDefaultFont();
@@ -29,12 +38,18 @@ class test extends pdfBase
     public function pageRect()
     {
         $this->SetDrawColor("#0000FF");
-        $this->Rect($this->lMargin, $this->tMargin, $this->GetPageWidth() - $this->lMargin - $this->rMargin, $this->GetPageHeight() - $this->tMargin - $this->bMargin);
+        $this->Rect($this->lMargin, $this->tMargin, $this->GetPageWidth() - $this->lMargin - $this->rMargin,
+            $this->GetPageHeight() - $this->tMargin - $this->bMargin);
         $this->SetDrawColor("#FF0000");
         $this->Line($this->lMargin, $this->PageBreakTrigger, $this->GetPageWidth() - $this->rMargin, $this->PageBreakTrigger);
         $this->SetDrawColor("#000000");
     }
 
+    /**
+     * @param $args
+     *
+     * @return bool
+     */
     public function display($args)
     {
         $this->setName("Page");
@@ -142,15 +157,17 @@ class test extends pdfBase
 
         $this->HTMLText("<p>As you read this text, you will notice that we seamlessly flow from <b>sections of bold text</b>, to <i>sections in italics</i> or <u>underlined sections</u> This text will even flow over lines, and even if we use really long words like <u>antidisestablishmentarianism</u> or <i>supercalifragilisticexpialidocious.</i></p><p>This is in a separate paragraph.<br/>And this is on the next line</p>This text is outside the paragraph but gets it's <b>own</b> anyway.<br/>And another new line.<p>Using the HTMLText() function is fun!</p>");
         $this->Ln();
-        $this->HTMLText("This is another paragraph, with some default styling. We're not using a 'p' tag so as to test that <b>bold</b> and <b><u>other formatting</u></b> works properly.<br/>And new lines too.", array(
-            "size" => $this->FontSizePt * 2 / 3,
-            "name" => "times"
-        ));
+        $this->HTMLText("This is another paragraph, with some default styling. We're not using a 'p' tag so as to test that <b>bold</b> and <b><u>other formatting</u></b> works properly.<br/>And new lines too.",
+            array(
+                "size" => $this->FontSizePt * 2 / 3,
+                "name" => "times"
+            ));
         $this->Ln();
-        $this->HTMLText("This is another paragraph, with some default styling and crazy alignment. We're not using a 'p' tag so as to test that <b>bold</b> and <b><u>other formatting</u></b> works properly.<br/>And new lines too.", array(
-            "size" => $this->FontSizePt * 2 / 3,
-            "name" => "times"
-        ), "C");
+        $this->HTMLText("This is another paragraph, with some default styling and crazy alignment. We're not using a 'p' tag so as to test that <b>bold</b> and <b><u>other formatting</u></b> works properly.<br/>And new lines too.",
+            array(
+                "size" => $this->FontSizePt * 2 / 3,
+                "name" => "times"
+            ), "C");
         $this->Ln();
         $this->Ln();
 
@@ -165,7 +182,7 @@ class test extends pdfBase
         );
 
         foreach ($fonts as $font) {
-            $this->HTMLText("This is testing various different fonts: <b>".$font."</b>", array(
+            $this->HTMLText("This is testing various different fonts: <b>" . $font . "</b>", array(
                 "name" => $font
             ));
             $this->Ln();
@@ -180,7 +197,8 @@ class test extends pdfBase
                 $this->Line($this->lMargin, $this->GetY(), $this->GetPageWidth() - $this->rMargin, $this->GetY());
                 $this->SetDrawColor("#000000");
 
-                $this->FlowText("Let's write a lot of text to ensure that it flows over page boundaries properly. We're really pushing the boat out here, gotta make sure it's all correct. Hmm .... Lots of text, LOATS OOOOVVV TEEEAAACCKKSST. Ahem. So lots of text, lots and lots of text. Long words too, antidisestablishmentarianism, supercalifragilisticexpialidocious, .... refrigerator?... ok, that's enough.", null, $a);
+                $this->FlowText("Let's write a lot of text to ensure that it flows over page boundaries properly. We're really pushing the boat out here, gotta make sure it's all correct. Hmm .... Lots of text, LOATS OOOOVVV TEEEAAACCKKSST. Ahem. So lots of text, lots and lots of text. Long words too, antidisestablishmentarianism, supercalifragilisticexpialidocious, .... refrigerator?... ok, that's enough.",
+                    null, $a);
                 $this->Ln();
                 $this->Ln();
                 $this->pageRect();
@@ -192,8 +210,10 @@ class test extends pdfBase
         $this->TableCell("This is testing the <b>new</b> HTML in table functionality.", $mw / 2, null, "L", 1);
         $this->Ln();
 
-        $this->TableCell("<b>How about</b> we <i>test</i> things like <u>this</u>.<br/>This is centered text", $mw / 3, null, "C", 1, null, "B");
-        $this->TableCell("<p>We can even do paragraphs and stuff like that. It's awesomely awesome!</p><p>This is a second paragraph. It even has <b>bold</b>, <u>underlined</u> and <i>italic</i> text in it.</p><p>We can also break in<br/>the middle of lines!</p>", null, null, "R", 1);
+        $this->TableCell("<b>How about</b> we <i>test</i> things like <u>this</u>.<br/>This is centered text", $mw / 3,
+            null, "C", 1, null, "B");
+        $this->TableCell("<p>We can even do paragraphs and stuff like that. It's awesomely awesome!</p><p>This is a second paragraph. It even has <b>bold</b>, <u>underlined</u> and <i>italic</i> text in it.</p><p>We can also break in<br/>the middle of lines!</p>",
+            null, null, "R", 1);
         $this->Ln();
 
         $this->AddPage();
@@ -211,48 +231,58 @@ class test extends pdfBase
         ), "R", 1, null, "B");
         $this->Ln();
 
-        $this->TableCell("This is a test.\nThis is a really long line containing lots and lots of text and stuff.\nThis is a shorter line.\n\nThat was a blank line, just for kicks.\nThis line contains a really long word. It is supercalifragilisticexpialidocious.\nWe also know the word Antidisestablishmentarianism.", 100, array(
-            "background" => "#FFFF00",
-            "style" => "BU"
-        ), "L", 1);
-        $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.", null, array(
-            "background" => "#00FFFF"
-        ), "R", 1);
+        $this->TableCell("This is a test.\nThis is a really long line containing lots and lots of text and stuff.\nThis is a shorter line.\n\nThat was a blank line, just for kicks.\nThis line contains a really long word. It is supercalifragilisticexpialidocious.\nWe also know the word Antidisestablishmentarianism.",
+            100, array(
+                "background" => "#FFFF00",
+                "style"      => "BU"
+            ), "L", 1);
+        $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.",
+            null, array(
+                "background" => "#00FFFF"
+            ), "R", 1);
         $this->Ln();
 
-        $this->TableCell("This is a second row, it should only appear after the first one has been completed.\n\nAnother blank line.\nAnd some more text.", 70, array(
-            "background" => "#FF00FF",
-            "style" => "U"
-        ), "C", 1);
-        $this->TableCell("This is the second column of the second row. We're going to repeat the first row again after this one, just to make sure that everything is set properly.", null, array(
-            "background" => "#C0C0C0",
-            "color" => "#FF0000",
-            "size" => 12,
-            "style" => "B"
-        ), "C", 1);
+        $this->TableCell("This is a second row, it should only appear after the first one has been completed.\n\nAnother blank line.\nAnd some more text.",
+            70, array(
+                "background" => "#FF00FF",
+                "style"      => "U"
+            ), "C", 1);
+        $this->TableCell("This is the second column of the second row. We're going to repeat the first row again after this one, just to make sure that everything is set properly.",
+            null, array(
+                "background" => "#C0C0C0",
+                "color"      => "#FF0000",
+                "size"       => 12,
+                "style"      => "B"
+            ), "C", 1);
         $this->Ln();
 
-        $this->TableCell("This is a test.\nThis is a really long line containing lots and lots of text and stuff.\nThis is a shorter line.\n\nThat was a blank line, just for kicks.\nThis line contains a really long word. It is supercalifragilisticexpialidocious.\nWe also know the word Antidisestablishmentarianism.", 100, array("size" => 12, "style" => "B"), "R", 1);
-        $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.", null, "U", "L", 1);
+        $this->TableCell("This is a test.\nThis is a really long line containing lots and lots of text and stuff.\nThis is a shorter line.\n\nThat was a blank line, just for kicks.\nThis line contains a really long word. It is supercalifragilisticexpialidocious.\nWe also know the word Antidisestablishmentarianism.",
+            100, array("size" => 12, "style" => "B"), "R", 1);
+        $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.",
+            null, "U", "L", 1);
         $this->Ln();
 
-        $this->TableCell("This is here to ensure that the offsetting is working properly\n\nIt's also middle aligned.", 70, array(
-            "background" => "#FFFF00",
-            "style" => "BU"
-        ), "R", 1, null, "M");
-        $this->TableCell("This is a really long line. We're testing how text in cells is transferred to the next page, and so on and so forth. As such, this is going to contain a massive amount of text, which we will use to test this, then we'll repeat the first line again, just to make sure that nothing's broken. If it has, we'll have to fix the bug, which may or may not be fun. So yeah, that's what's happening. Like it or not.\n\nAnnoyingly, I didn't make this line long enough the first time, so I'm resorting to tricks like this:\n\nAnd this:\n\nTo just make it fricking long enough. What do I have to do?\n\nWhat about now, is this long enough, dammit?!?!?!?!\n\nAnd now it looks like I need it to be even longer!\n\nSigh\n\nI'm going to cheat and just duplicate what's above:\n\nDuplication START:\n\nThis is a really long line. We're testing how text in cells is transferred to the next page, and so on and so forth. As such, this is going to contain a massive amount of text, which we will use to test this, then we'll repeat the first line again, just to make sure that nothing's broken. If it has, we'll have to fix the bug, which may or may not be fun. So yeah, that's what's happening. Like it or not.\n\nAnnoyingly, I didn't make this line long enough the first time, so I'm resorting to tricks like this:\n\nAnd this:\n\nTo just make it fricking long enough. What do I have to do?\n\nWhat about now, is this long enough, dammit?!?!?!?!\n\nDuplication END!\n\nGlad that's over, now on with the program.", 40, array(
-            "background" => "#FF00FF",
-            "style" => "U"
-        ), "C", 1);
+        $this->TableCell("This is here to ensure that the offsetting is working properly\n\nIt's also middle aligned.",
+            70, array(
+                "background" => "#FFFF00",
+                "style"      => "BU"
+            ), "R", 1, null, "M");
+        $this->TableCell("This is a really long line. We're testing how text in cells is transferred to the next page, and so on and so forth. As such, this is going to contain a massive amount of text, which we will use to test this, then we'll repeat the first line again, just to make sure that nothing's broken. If it has, we'll have to fix the bug, which may or may not be fun. So yeah, that's what's happening. Like it or not.\n\nAnnoyingly, I didn't make this line long enough the first time, so I'm resorting to tricks like this:\n\nAnd this:\n\nTo just make it fricking long enough. What do I have to do?\n\nWhat about now, is this long enough, dammit?!?!?!?!\n\nAnd now it looks like I need it to be even longer!\n\nSigh\n\nI'm going to cheat and just duplicate what's above:\n\nDuplication START:\n\nThis is a really long line. We're testing how text in cells is transferred to the next page, and so on and so forth. As such, this is going to contain a massive amount of text, which we will use to test this, then we'll repeat the first line again, just to make sure that nothing's broken. If it has, we'll have to fix the bug, which may or may not be fun. So yeah, that's what's happening. Like it or not.\n\nAnnoyingly, I didn't make this line long enough the first time, so I'm resorting to tricks like this:\n\nAnd this:\n\nTo just make it fricking long enough. What do I have to do?\n\nWhat about now, is this long enough, dammit?!?!?!?!\n\nDuplication END!\n\nGlad that's over, now on with the program.",
+            40, array(
+                "background" => "#FF00FF",
+                "style"      => "U"
+            ), "C", 1);
         $this->TableCell("And this is here just to finish off the line.\n\nIt's bottom aligned.", null, array(
             "background" => "#00FFFF",
-            "size" => 12,
-            "style" => "B"
+            "size"       => 12,
+            "style"      => "B"
         ), "L", 1, null, "B");
         $this->Ln();
 
-        $this->TableCell("This is a test.\nThis is a really long line containing lots and lots of text and stuff.\nThis is a shorter line.\n\nThat was a blank line, just for kicks.\nThis line contains a really long word. It is supercalifragilisticexpialidocious.\nWe also know the word Antidisestablishmentarianism.", 100, array("size" => 12, "style" => "B"), "R", 1);
-        $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.", null, "U", "L", 1);
+        $this->TableCell("This is a test.\nThis is a really long line containing lots and lots of text and stuff.\nThis is a shorter line.\n\nThat was a blank line, just for kicks.\nThis line contains a really long word. It is supercalifragilisticexpialidocious.\nWe also know the word Antidisestablishmentarianism.",
+            100, array("size" => 12, "style" => "B"), "R", 1);
+        $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.",
+            null, "U", "L", 1);
         $this->Ln();
 
         return true;

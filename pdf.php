@@ -8,7 +8,8 @@ error_reporting(E_ALL);
 
 session_cache_limiter("private_no_expire");
 
-use PDFLib\BaseDocument;
+use PDFLib\Documents\BaseDocument;
+use PDFLib\Documents\FallbackDocument;
 
 $items = array();
 
@@ -22,7 +23,6 @@ if (isset($_SERVER["PATH_INFO"]) && $_SERVER["PATH_INFO"] != "") {
     $items = explode("/", $path);
 }
 
-// @TODO: Add factory to load docclass
 $PDFLib = new PDFLib\PDFLib();
 
 if ($_SERVER["HTTP_USER_AGENT"] == "contype") {
@@ -43,14 +43,14 @@ if (count($items) > 0) {
     $className = ucfirst(current($items));
 }
 
-$namespacedClassName = "PDFLib\\{$className}Document";
+$namespacedClassName = "PDFLib\\Documents\\{$className}Document";
 
 if ($className != null && class_exists($namespacedClassName)) {
     $document = new $namespacedClassName($PDFLib);
+}
 
-    if (! is_subclass_of($document, \PDFLib\BaseDocument::class)) {
-        $document = new \PDFLib\FallbackDocument($className, $PDFLib);
-    }
+if (! is_subclass_of($document, BaseDocument::class)) {
+    $document = new FallbackDocument($className, $PDFLib);
 }
 
 $etag = $document->getETag($args);

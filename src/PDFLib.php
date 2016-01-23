@@ -20,6 +20,8 @@ class PDFLib extends FPDF implements DocumentType
 
     /**
      * Over-write the protected properties of the FPDF base class.
+     *
+     * @var
      */
     public $bMargin;
     public $tMargin;
@@ -74,13 +76,11 @@ class PDFLib extends FPDF implements DocumentType
     {
         $fonts = array();
 
-        foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            $d = opendir($path . "/fonts");
+        $d = opendir(realpath(__DIR__ . "/../fonts"));
 
-            while ($f = readdir($d)) {
-                if (preg_match("/^(.*)\.php$/", $f, $regs)) {
-                    $fonts[] = $regs[1];
-                }
+        while ($f = readdir($d)) {
+            if (preg_match("/^(.*)\.php$/", $f, $regs)) {
+                $fonts[] = $regs[1];
             }
         }
 
@@ -115,12 +115,9 @@ class PDFLib extends FPDF implements DocumentType
             if ( ! isset($this->fonts[$fontkey]) && ! in_array($f, $this->CoreFonts)) {
                 $file = str_replace(' ', '', $f) . strtolower($s) . '.php';
 
-                foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-                    if (file_exists($path . "/fonts/" . $file)) {
-                        $this->AddFont($f, $s);
+                if (file_exists(__DIR__ . "/../fonts/" . $file)) {
+                    $this->AddFont($f, $s);
 
-                        break;
-                    }
                 }
             }
         }
@@ -135,14 +132,11 @@ class PDFLib extends FPDF implements DocumentType
      */
     public function _loadfont($font)
     {
+
         $defaultFontpath = $this->fontpath;
 
-        foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            if (file_exists($path."/fonts/" . $font)) {
-                $this->fontpath = $path . "/fonts/";
-
-                break;
-            }
+        if (file_exists(realpath(__DIR__ . "/../fonts") . '/' . $font)) {
+            $this->fontpath = realpath(__DIR__ . "/../fonts/") . '/';
         }
 
         $data = parent::_loadfont($font);

@@ -1,4 +1,4 @@
-<?php namespace PDFLib;
+<?php namespace PDFLib\Documents;
 
 use Exception;
 use PDFLib\Interfaces\DocumentType;
@@ -27,7 +27,7 @@ abstract class BaseDocument implements EventListener
 
         $pdf->addListener($this);
 
-        $this->name = false;
+        $this->name    = false;
         $this->message = "No reason specified.";
     }
 
