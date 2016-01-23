@@ -1,0 +1,26 @@
+{
+  "name": "root/pdflib",
+  "description": "A basic PHP PDF library based on fpdf",
+  "require": {
+    "setasign/fpdf": "~1.8",
+    "symfony/console": "~3.0"
+  },
+  "license": "GNU 2.1",
+  "authors": [
+    {
+      "name": "Julian Calaby"
+    },
+    {
+      "name": "James Healey",
+      "email": "jayhealey@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "PDFLib\\": "src/"
+    },
+    "files": [
+      "src/helpers.php"
+    ]
+  }
+}
