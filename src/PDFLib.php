@@ -394,7 +394,7 @@ class PDFLib extends FPDF implements DocumentType
             );
         }
 
-        $doc = new DOMDocument();
+        $doc = new \DOMDocument();
 
         $doc->loadXML("<root/>");
 
@@ -840,7 +840,7 @@ class PDFLib extends FPDF implements DocumentType
             );
         }
 
-        $doc = new DOMDocument();
+        $doc = new \DOMDocument();
 
         $doc->loadXML("<root/>");
 

@@ -15,6 +15,11 @@ class FallbackDocument extends BaseDocument
         $this->setMessage("PDF class not defined");
     }
 
+    /**
+     * @param $args
+     *
+     * @return null
+     */
     public function display($args)
     {
         return null;
