@@ -395,7 +395,7 @@ class PDFLib extends FPDF implements DocumentType
             );
         }
 
-        $doc = new DOMDocument();
+        $doc = new \DOMDocument();
 
         $doc->loadXML("<root/>");
 
@@ -613,29 +613,6 @@ class PDFLib extends FPDF implements DocumentType
     }
 
     /**
-     * @param null   $o
-     * @param string $f
-     */
-    public function AddPage($o = null, $f = "")
-    {
-        if ($o == null) {
-            $o = $this->defaultOrientation;
-        }
-
-        parent::AddPage($o, $f);
-
-        /* The standard way to do headers is to mod the tMargin to
-         * exclude the amount of space the header will take up, then
-         * mod Y to move the cursor to the right spot, emit the header
-         * then leave. Let's fix it back up so stuff starts at the
-         * right point.
-         */
-        $this->SetY($this->tMargin);
-
-        $this->cur_line_h = 0;
-    }
-
-    /**
      * @param null $h
      */
     public function Ln($h = null)
@@ -840,7 +817,7 @@ class PDFLib extends FPDF implements DocumentType
             );
         }
 
-        $doc = new DOMDocument();
+        $doc = new \DOMDocument();
 
         $doc->loadXML("<root/>");
 

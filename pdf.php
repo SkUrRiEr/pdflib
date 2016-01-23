@@ -1,5 +1,11 @@
 <?php
 
+require __DIR__ . '/vendor/autoload.php';
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 /* pdf.php
  *
  * Top level PDF functionality.
@@ -48,8 +54,7 @@
 
 session_cache_limiter("private_no_expire");
 
-require_once("pdf/lib/pdfBase.php");
-require_once("lib/util.php");
+use PDFLib\BaseDocument;
 
 $items = array();
 $extension = null;
@@ -66,72 +71,44 @@ if (isset($_SERVER["PATH_INFO"]) && $_SERVER["PATH_INFO"] != "") {
     $items = explode("/", $path);
 }
 
-switch (strtolower($extension)) {
-    case "pdf":
-    default:
-        require_once("lib/libPDF.php");
-        $docclass = new libPDF();
-}
-
-// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
-/*if ($_SERVER["HTTP_USER_AGENT"] == "contype") {
-        header("Content-Type: ".$docclass->getMimeType());
-
-        exit;
-}*/
+// @TODO: Add factory to load docclass
+$PDFLib = new PDFLib\PDFLib();
 
 $args = array();
 for ($i = 1; $i < count($items); $i++) {
     $args[] = $items[$i];
 }
 
-$class = null;
-$cls = null;
+$className = null;
+$document = null;
 
 if (count($items) > 0) {
-    $class = current($items);
+    $className = ucfirst(current($items));
 }
 
-if ($class != null && file_which("pdf/".$class.".php")) {
-    require_once("pdf/".$class.".php");
+$namespacedClassName = "PDFLib\\{$className}Document";
 
-    if (class_exists($class)) {
-        $cls = new $class($docclass);
+if ($className != null && class_exists($namespacedClassName)) {
+    $document = new $namespacedClassName($PDFLib);
 
-        if (!is_subclass_of($cls, "pdfBase")) {
-            $cls = null;
-        }
+    if (! is_subclass_of($document, \PDFLib\BaseDocument::class)) {
+        $document = new \PDFLib\FallbackDocument($className, $PDFLib);
     }
 }
 
-if ($cls == null) {
-    require_once("pdf/fallback.php");
+var_dump($className, $document);
+exit;
 
-    $cls = new fallback($class, $docclass);
-
-    if (!is_subclass_of($cls, "pdfBase")) {
-        $cls = null;
-    }
-
-    $args = $items;
-}
-
-$etag = $cls->getETag($args);
+$etag = $document->getETag($args);
 
 if ($etag != null) {
     header("ETag: \"".$etag."\"");
 }
 
-// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
-if ($_SERVER["HTTP_USER_AGENT"] == "contype") {
-    header("Content-Type: ".$cls->getMimeType());
-    exit;
-}
-
-$ret = $cls->display($args);
+$ret = $document->display($args);
 
 if ($ret != null && $ret != false) {
-    $name = $cls->getName();
+    $name = $document->getName();
 
     if (!$name) {
         $ret = $name;
@@ -139,23 +116,23 @@ if ($ret != null && $ret != false) {
 }
 
 if ($ret === null) {
-    $content = "<html><head><title>PDF Page</title></head><body><h1>PDF Not Found</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>";
+    $content = "<html><head><title>PDF Page</title></head><body><h1>PDF Not Found</h1><h2>Error Message:</h2><p>".$document->getMessage()."</p></body></html>";
 
     header("HTTP/1.1 404 Page Not Found");
 } elseif ($ret === FALSE) {
-    $content = "<html><head><title>PDF Generation Failed</title></head><body><h1>PDF Generation Failed</h1><h2>Error Message:</h2><p>".$cls->getMessage()."</p></body></html>";
+    $content = "<html><head><title>PDF Generation Failed</title></head><body><h1>PDF Generation Failed</h1><h2>Error Message:</h2><p>".$document->getMessage()."</p></body></html>";
 
     header("HTTP/1.1 500 Server Error");
 } else {
     // FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
-    header("Content-Type: ".$cls->getMimeType());
-    //header("Content-Type: ".$docclass->getMimeType());
+    header("Content-Type: ".$document->getMimeType());
+    //header("Content-Type: ".$PDFLib->getMimeType());
 
-    $content = $cls->getContent();
-    //$content = $docclass->getContent();
+    $content = $document->getContent();
+    //$content = $PDFLib->getContent();
 
-    header("Content-Disposition: inline; filename=\"".$name.".".$cls->getExtension()."\";");
-    //header("Content-Disposition: inline; filename=".$name.".".$docclass->getExtension().";");
+    header("Content-Disposition: inline; filename=\"".$name.".".$document->getExtension()."\";");
+    //header("Content-Disposition: inline; filename=".$name.".".$PDFLib->getExtension().";");
     header("Content-Length: ".strlen($content));
 }
 
