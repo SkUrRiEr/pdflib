@@ -1,9 +1,10 @@
-<?php
+<?php namespace PDFLib;
 
-require_once("fpdf/fpdf.php");
-require_once("lib/libPDFInterface.php");
+use FPDF;
+use PDFLib\Interfaces\DocumentType;
+use PDFLib\Interfaces\EventListener;
 
-class libPDF extends FPDF implements libPDFInterface
+class PDFLib extends FPDF implements DocumentType
 {
     public $default_font;
     private $excess_text;
@@ -14,53 +15,80 @@ class libPDF extends FPDF implements libPDFInterface
     private $curFlowLine;
     private $curFlowLineAlign;
 
+    /**
+     * Over-write the protected properties of the FPDF base class.
+     *
+     * @var
+     */
+    public $bMargin;
+    public $tMargin;
+    public $rMargin;
+    public $lMargin;
+    public $w;
+    public $h;
+    public $PageBreakTrigger;
+    public $FontSizePt;
+
     private $listeners;
 
+    /**
+     * PDFLib constructor.
+     *
+     * @param string $orientation
+     * @param string $unit
+     * @param string $format
+     */
     public function __construct($orientation = "P", $unit = "mm", $format = "A4")
     {
         parent::__construct($orientation, $unit, $format);
 
         $this->default_font = array(
-            "name" => "Helvetica",
-            "style" => "",
-            "size" => "10",
+            "name"       => "Helvetica",
+            "style"      => "",
+            "size"       => "10",
             "background" => "#FFFFFF", /* FIXME: Changing this
                                         * doesn't change the page's
                                         * background colour */
-            "color" => "#000000"
+            "color"      => "#000000"
         );
 
-        $this->cur_line_h = null;
-        $this->cur_max_h = 0;
-        $this->valign_defered = array();
-        $this->excess_text = array();
-        $this->defered_borders = array();
-        $this->curFlowLine = array();
+        $this->cur_line_h       = null;
+        $this->cur_max_h        = 0;
+        $this->valign_defered   = array();
+        $this->excess_text      = array();
+        $this->defered_borders  = array();
+        $this->curFlowLine      = array();
         $this->curFlowLineAlign = null;
-        $this->angle = 0;
+        $this->angle            = 0;
 
         $this->SetDefaultFont();
 
         $this->listeners = array();
     }
 
+    /**
+     * @return array
+     */
     public function getAvailableFonts()
     {
         $fonts = array();
 
-        foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            $d = opendir($path."/pdf/fonts");
+        $d = opendir(realpath(__DIR__ . "/../fonts"));
 
-            while ($f = readdir($d)) {
-                if (preg_match("/^(.*)\.php$/", $f, $regs)) {
-                    $fonts[] = $regs[1];
-                }
+        while ($f = readdir($d)) {
+            if (preg_match("/^(.*)\.php$/", $f, $regs)) {
+                $fonts[] = $regs[1];
             }
         }
 
         return $fonts;
     }
 
+    /**
+     * @param        $family
+     * @param string $style
+     * @param int    $size
+     */
     public function SetFont($family, $style = '', $size = 0)
     {
         if ($family != '') {
@@ -79,17 +107,14 @@ class libPDF extends FPDF implements libPDFInterface
                 return;
             }
 
-            $fontkey = $f.$s;
+            $fontkey = $f . $s;
 
-            if (!isset($this->fonts[$fontkey]) && !in_array($f, $this->CoreFonts)) {
-                $file = str_replace(' ', '', $f).strtolower($s).'.php';
+            if ( ! isset($this->fonts[$fontkey]) && ! in_array($f, $this->CoreFonts)) {
+                $file = str_replace(' ', '', $f) . strtolower($s) . '.php';
 
-                foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-                    if (file_exists($path."/pdf/fonts/".$file)) {
-                        $this->AddFont($f, $s);
+                if (file_exists(__DIR__ . "/../fonts/" . $file)) {
+                    $this->AddFont($f, $s);
 
-                        break;
-                    }
                 }
             }
         }
@@ -97,16 +122,18 @@ class libPDF extends FPDF implements libPDFInterface
         parent::SetFont($family, $style, $size);
     }
 
+    /**
+     * @param $font
+     *
+     * @return array
+     */
     public function _loadfont($font)
     {
+
         $defaultFontpath = $this->fontpath;
 
-        foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            if (file_exists($path."/pdf/fonts/".$font)) {
-                $this->fontpath = $path."/pdf/fonts/";
-
-                break;
-            }
+        if (file_exists(realpath(__DIR__ . "/../fonts") . '/' . $font)) {
+            $this->fontpath = realpath(__DIR__ . "/../fonts/") . '/';
         }
 
         $data = parent::_loadfont($font);
@@ -138,7 +165,7 @@ class libPDF extends FPDF implements libPDFInterface
                 }
             }
 
-            $data["file"] = implode($set, "/")."/".$data["file"];
+            $data["file"] = implode($set, "/") . "/" . $data["file"];
         }
 
         $this->fontpath = $defaultFontpath;
@@ -146,6 +173,11 @@ class libPDF extends FPDF implements libPDFInterface
         return $data;
     }
 
+    /**
+     * @param $str
+     *
+     * @return array
+     */
     private function pathSplit($str)
     {
         // FIXME: May not work on Windows
@@ -155,12 +187,12 @@ class libPDF extends FPDF implements libPDFInterface
         $str = str_replace("/./", "/", $str);
 
         if ($str[0] != "/") {
-            $str = dirname($_SERVER["SCRIPT_FILENAME"])."/".$str;
+            $str = dirname($_SERVER["SCRIPT_FILENAME"]) . "/" . $str;
         }
 
         while (strlen($str) > 1 && $str != "/") {
             $set[] = basename($str);
-            $str = dirname($str);
+            $str   = dirname($str);
         }
 
         if ($str != "/") {
@@ -170,23 +202,48 @@ class libPDF extends FPDF implements libPDFInterface
         return $set;
     }
 
+    /**
+     * @return string
+     */
     public function getMimeType()
     {
         return "application/pdf";
     }
 
+    /**
+     * @return string
+     */
     public function getExtension()
     {
         return "pdf";
     }
 
-    public function addListener(libPDFListener $class)
+    /**
+     * @param EventListener $class
+     */
+    public function addListener(EventListener $class)
     {
         $this->listeners[] = $class;
     }
 
-    public function TableCell($html, $width = null, $fontstyle = null, $align = "L", $border = 0, $link = null, $valign = "T")
-    {
+    /**
+     * @param        $html
+     * @param null   $width
+     * @param null   $fontstyle
+     * @param string $align
+     * @param int    $border
+     * @param null   $link
+     * @param string $valign
+     */
+    public function TableCell(
+        $html,
+        $width = null,
+        $fontstyle = null,
+        $align = "L",
+        $border = 0,
+        $link = null,
+        $valign = "T"
+    ) {
         $html = utf8_decode($html);
 
         if ($fontstyle != null) {
@@ -198,23 +255,23 @@ class libPDF extends FPDF implements libPDFInterface
 
             $curfont = $this->GetCurrentFont();
 
-            if (!isset($fontstyle["size"])) {
+            if ( ! isset($fontstyle["size"])) {
                 $fontstyle["size"] = $curfont["size"];
             }
 
-            if (!isset($fontstyle["style"])) {
+            if ( ! isset($fontstyle["style"])) {
                 $fontstyle["style"] = $curfont["style"];
             }
 
-            if (!isset($fontstyle["name"])) {
+            if ( ! isset($fontstyle["name"])) {
                 $fontstyle["name"] = $curfont["name"];
             }
 
-            if (!isset($fontstyle["background"])) {
+            if ( ! isset($fontstyle["background"])) {
                 $fontstyle["background"] = $curfont["background"];
             }
 
-            if (!isset($fontstyle["color"])) {
+            if ( ! isset($fontstyle["color"])) {
                 $fontstyle["color"] = $curfont["color"];
             }
 
@@ -250,6 +307,11 @@ class libPDF extends FPDF implements libPDFInterface
         }
     }
 
+    /**
+     * @param        $text
+     * @param null   $style
+     * @param string $align
+     */
     public function FlowText($text, $style = null, $align = "L")
     {
         $text = utf8_decode($text);
@@ -304,10 +366,10 @@ class libPDF extends FPDF implements libPDFInterface
                 }
 
                 $this->curFlowLine[] = array(
-                    "x" => $x,
-                    "w" => $cw,
+                    "x"     => $x,
+                    "w"     => $cw,
                     "style" => $realstyle,
-                    "text" => $chunk
+                    "text"  => $chunk
                 );
 
                 $this->SetX($x + $cw);
@@ -324,17 +386,22 @@ class libPDF extends FPDF implements libPDFInterface
         }
     }
 
+    /**
+     * @param        $html
+     * @param array  $bstyle
+     * @param string $align
+     */
     public function HTMLText($html, $bstyle = array(), $align = "L")
     {
         if ($bstyle == null) {
             $bstyle = array();
-        } elseif (!is_array($bstyle)) {
+        } elseif ( ! is_array($bstyle)) {
             $bstyle = array(
                 "style" => $bstyle
             );
         }
 
-        $doc = new DOMDocument();
+        $doc = new \DOMDocument();
 
         $doc->loadXML("<root/>");
 
@@ -346,7 +413,7 @@ class libPDF extends FPDF implements libPDFInterface
         $html = mb_convert_encoding($html, "UTF-8", "UTF-8");
 
         $f = $doc->createDocumentFragment();
-        if (!$f->appendXML($html)) {
+        if ( ! $f->appendXML($html)) {
             return;
         }
 
@@ -430,10 +497,15 @@ class libPDF extends FPDF implements libPDFInterface
         }
     }
 
+    /**
+     * @param null $name
+     * @param null $style
+     * @param null $size
+     */
     public function SetDefaultFont($name = null, $style = null, $size = null)
     {
         $bgcolor = $this->default_font["background"];
-        $color = $this->default_font["color"];
+        $color   = $this->default_font["color"];
 
         if (is_array($name)) {
             if (isset($name["size"])) {
@@ -480,6 +552,9 @@ class libPDF extends FPDF implements libPDFInterface
         $this->SetTextColor($color);
     }
 
+    /**
+     * @return array
+     */
     public function GetCurrentFont()
     {
         $style = $this->FontStyle;
@@ -489,18 +564,22 @@ class libPDF extends FPDF implements libPDFInterface
         }
 
         return array(
-            "name" => $this->FontFamily,
-            "style" => $style,
-            "size" => $this->FontSizePt,
+            "name"       => $this->FontFamily,
+            "style"      => $style,
+            "size"       => $this->FontSizePt,
             "background" => $this->GetFillColor(),
-            "color" => $this->GetTextColor()
+            "color"      => $this->GetTextColor()
         );
     }
 
-    // Random stuff to do fancy shit
-
-    // This was stolen from a random web forum and modified until it made
-    // sense.
+    /**
+     * Random stuff to do fancy shit.
+     * This was stolen from a random web forum and modified until it made sense.
+     *
+     * @param      $angle
+     * @param null $x
+     * @param null $y
+     */
     public function Rotate($angle, $x = null, $y = null)
     {
         if ($x == null) {
@@ -519,15 +598,19 @@ class libPDF extends FPDF implements libPDFInterface
 
         if ($angle != 0) {
             $angle *= M_PI / 180;
-            $c = cos($angle);
-            $s = sin($angle);
+            $c  = cos($angle);
+            $s  = sin($angle);
             $cx = $x * $this->k;
             $cy = ($this->h - $y) * $this->k;
 
-            $this->_out(sprintf('q %.5f %.5f %.5f %.5f %.2f %.2f cm 1 0 0 1 %.2f %.2f cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
+            $this->_out(sprintf('q %.5f %.5f %.5f %.5f %.2f %.2f cm 1 0 0 1 %.2f %.2f cm', $c, $s, -$s, $c, $cx, $cy,
+                -$cx, -$cy));
         }
     }
 
+    /**
+     * @param $o
+     */
     public function setDefaultOrientation($o)
     {
         if (is_string($o) && $o != "" && (($o = strtoupper($o[0])) == "P" || $o == "L")) {
@@ -535,27 +618,9 @@ class libPDF extends FPDF implements libPDFInterface
         }
     }
 
-    // Overidden base class functions
-
-    public function AddPage($o = null, $f = "")
-    {
-        if ($o == null) {
-            $o = $this->defaultOrientation;
-        }
-
-        parent::AddPage($o, $f);
-
-        /* The standard way to do headers is to mod the tMargin to
-         * exclude the amount of space the header will take up, then
-         * mod Y to move the cursor to the right spot, emit the header
-         * then leave. Let's fix it back up so stuff starts at the
-         * right point.
-         */
-        $this->SetY($this->tMargin);
-
-        $this->cur_line_h = 0;
-    }
-
+    /**
+     * @param null $h
+     */
     public function Ln($h = null)
     {
         $this->emitCurFlowLine();
@@ -592,7 +657,8 @@ class libPDF extends FPDF implements libPDFInterface
                     $offset /= 2;
                 }
 
-                $this->OutputText($item["chunks"], $item["x"], $item["width"], $item["border"], $item["align"], $item["link"], $item["bg"], $offset, $item["height"]);
+                $this->OutputText($item["chunks"], $item["x"], $item["width"], $item["border"], $item["align"],
+                    $item["link"], $item["bg"], $offset, $item["height"]);
             }
 
             $this->valign_defered = array();
@@ -604,9 +670,9 @@ class libPDF extends FPDF implements libPDFInterface
             if (count($this->defered_borders) != 0) {
                 foreach ($this->defered_borders as &$item) {
                     $saved_defered[$item["x"]] = array(
-                        "x" => $item["x"],
-                        "width" => $item["width"],
-                        "border" => $item["border"],
+                        "x"          => $item["x"],
+                        "width"      => $item["width"],
+                        "border"     => $item["border"],
                         "background" => $item["background"]
                     );
 
@@ -620,11 +686,12 @@ class libPDF extends FPDF implements libPDFInterface
 
             $this->AddPage();
 
-            $set = $this->excess_text;
+            $set               = $this->excess_text;
             $this->excess_text = array();
 
             foreach ($set as $item) {
-                $this->OutputText($item["chunks"], $item["x"], $item["width"], $item["border"], $item["align"], $item["link"], $item["bg"], $item["valigndata"], $item["height"]);
+                $this->OutputText($item["chunks"], $item["x"], $item["width"], $item["border"], $item["align"],
+                    $item["link"], $item["bg"], $item["valigndata"], $item["height"]);
             }
 
             if (count($this->defered_borders) > 0) {
@@ -659,6 +726,11 @@ class libPDF extends FPDF implements libPDFInterface
         parent::Ln($h);
     }
 
+    /**
+     * @param      $r
+     * @param null $g
+     * @param null $b
+     */
     public function SetDrawColor($r, $g = null, $b = null)
     {
         $c = $this->parseColours($r, $g, $b);
@@ -666,11 +738,19 @@ class libPDF extends FPDF implements libPDFInterface
         return parent::SetDrawColor($c["red"], $c["green"], $c["blue"]);
     }
 
+    /**
+     * @return array|null
+     */
     public function GetDrawColor()
     {
         return $this->decodePDFColour($this->DrawColor, "G", "RG");
     }
 
+    /**
+     * @param      $r
+     * @param null $g
+     * @param null $b
+     */
     public function SetFillColor($r, $g = null, $b = null)
     {
         $c = $this->parseColours($r, $g, $b);
@@ -678,6 +758,9 @@ class libPDF extends FPDF implements libPDFInterface
         return parent::SetFillColor($c["red"], $c["green"], $c["blue"]);
     }
 
+    /**
+     * @return array|null
+     */
     public function GetFillColor()
     {
         return $this->decodePDFColour($this->FillColor, "g", "rg");
@@ -731,20 +814,22 @@ class libPDF extends FPDF implements libPDFInterface
         $html = mb_convert_encoding($html, "UTF-8", "UTF-8");
 
         if ($html == "") {
-            return array(array(
-                "text" => "",
-                "style" => $fontstyle,
-                "newlines" => 0
-            ));
+            return array(
+                array(
+                    "text"     => "",
+                    "style"    => $fontstyle,
+                    "newlines" => 0
+                )
+            );
         }
 
-        $doc = new DOMDocument();
+        $doc = new \DOMDocument();
 
         $doc->loadXML("<root/>");
 
         $f = $doc->createDocumentFragment();
 
-        if (!$f->appendXML($html)) {
+        if ( ! $f->appendXML($html)) {
             return array();
         }
 
@@ -776,8 +861,8 @@ class libPDF extends FPDF implements libPDFInterface
                 }
 
                 $chunks[] = array(
-                    "text" => $cur->nodeValue,
-                    "style" => $style,
+                    "text"     => $cur->nodeValue,
+                    "style"    => $style,
                     "newlines" => 0
                 );
             } elseif ($cur->nodeType == XML_ELEMENT_NODE) {
@@ -878,7 +963,7 @@ class libPDF extends FPDF implements libPDFInterface
                     $offset /= 2;
                 }
 
-                // Fall through
+            // Fall through
             default:
                 $this->SetX($x + $offset);
 
@@ -895,7 +980,7 @@ class libPDF extends FPDF implements libPDFInterface
                 }
         }
 
-        $this->curFlowLine = array();
+        $this->curFlowLine      = array();
         $this->curFlowLineAlign = null;
     }
 
@@ -910,15 +995,15 @@ class libPDF extends FPDF implements libPDFInterface
         } elseif (is_string($valigndata)) {
             if ($valigndata != "T") {
                 $this->valign_defered[] = array(
-                    "chunks" => $chunks,
-                    "x" => $x,
-                    "width" => $width,
-                    "border" => $border,
-                    "align" => $align,
-                    "link" => $link,
-                    "bg" => $bg,
+                    "chunks"     => $chunks,
+                    "x"          => $x,
+                    "width"      => $width,
+                    "border"     => $border,
+                    "align"      => $align,
+                    "link"       => $link,
+                    "bg"         => $bg,
                     "valigndata" => $valigndata,
-                    "height" => $cellheight
+                    "height"     => $cellheight
                 );
 
                 $this->SetX($x + $width);
@@ -945,7 +1030,7 @@ class libPDF extends FPDF implements libPDFInterface
 
             if (strpos($border, "T") !== false) {
                 $curborder = "T";
-                $border = str_replace("T", "", $border);
+                $border    = str_replace("T", "", $border);
             }
         }
 
@@ -975,7 +1060,7 @@ class libPDF extends FPDF implements libPDFInterface
             $this->Cell($width, $offset, "", $curborder, 0, $align, $bg, $link);
             parent::Ln($offset);
 
-            $output = true;
+            $output    = true;
             $curborder = "";
         }
 
@@ -1011,7 +1096,7 @@ class libPDF extends FPDF implements libPDFInterface
                     $talign = $align;
 
                     if (isset($lines[1]) || $chunk["newlines"] > 0 || $i == count($chunks) - 1) {
-                        $cw = $width - $cx;
+                        $cw       = $width - $cx;
                         $lines[0] = rtrim($lines[0]);
 
                         if ($cx != 0 && $align == "C") {
@@ -1059,8 +1144,8 @@ class libPDF extends FPDF implements libPDFInterface
 
                 if ($text != "") {
                     $next_page[] = array(
-                        "text" => $text,
-                        "style" => $chunk["style"],
+                        "text"     => $text,
+                        "style"    => $chunk["style"],
                         "newlines" => $chunk["newlines"]
                     );
                 } elseif ($chunk["newlines"] > 0) {
@@ -1082,7 +1167,7 @@ class libPDF extends FPDF implements libPDFInterface
             }
         }
 
-        if ($output && !$lineended) {
+        if ($output && ! $lineended) {
             parent::Ln();
 
             $cur_line_h += $this->FontSizePt / 2;
@@ -1098,33 +1183,33 @@ class libPDF extends FPDF implements libPDFInterface
 
         if ($next_page != array()) {
             $this->excess_text[] = array(
-                "chunks" => $next_page,
-                "x" => $x,
-                "width" => $width,
-                "border" => $border,
-                "align" => $align,
-                "link" => $link,
-                "bg" => $bg,
+                "chunks"     => $next_page,
+                "x"          => $x,
+                "width"      => $width,
+                "border"     => $border,
+                "align"      => $align,
+                "link"       => $link,
+                "bg"         => $bg,
                 "valigndata" => $valigndata,
-                "height" => $this->countChunkedLines($next_page, $width) * $this->FontSizePt / 2
+                "height"     => $this->countChunkedLines($next_page, $width) * $this->FontSizePt / 2
             );
 
-            if ($output && ( ($border !== 0 && $border != "") || $bg)) {
+            if ($output && (($border !== 0 && $border != "") || $bg)) {
                 $this->defered_borders[] = array(
-                    "x" => $x,
-                    "width" => $width,
-                    "border" => str_replace("B", "", $border),
+                    "x"          => $x,
+                    "width"      => $width,
+                    "border"     => str_replace("B", "", $border),
                     "background" => $bg ? $this->GetFillColor() : null,
-                    "h" => $cur_line_h
+                    "h"          => $cur_line_h
                 );
             }
-        } elseif (!$this->InHeader && !$this->InFooter && $output && ( ($border !== 0 && $border != "") || $bg )) {
+        } elseif ( ! $this->InHeader && ! $this->InFooter && $output && (($border !== 0 && $border != "") || $bg)) {
             $this->defered_borders[] = array(
-                "x" => $x,
-                "width" => $width,
-                "border" => $border,
+                "x"          => $x,
+                "width"      => $width,
+                "border"     => $border,
                 "background" => $bg ? $this->GetFillColor() : null,
-                "h" => $cur_line_h
+                "h"          => $cur_line_h
             );
         }
     }
@@ -1161,7 +1246,7 @@ class libPDF extends FPDF implements libPDFInterface
                     $sh = $h;
                     $h -= $item["h"];
 
-                    $b = $item["border"];
+                    $b              = $item["border"];
                     $item["border"] = 0;
                 }
             }
@@ -1209,11 +1294,11 @@ class libPDF extends FPDF implements libPDFInterface
 
     private function decodePDFColour($string, $g, $c)
     {
-        if (preg_match("/^([[:digit:].]*)\s+".$g."$/", $string, $regs)) {
+        if (preg_match("/^([[:digit:].]*)\s+" . $g . "$/", $string, $regs)) {
             return $regs[1] * 255;
         }
 
-        if (preg_match("/^([[:digit:].]*)\s+([[:digit:].]*)\s+([[:digit:].]*)\s+".$c."$/", $string, $regs)) {
+        if (preg_match("/^([[:digit:].]*)\s+([[:digit:].]*)\s+([[:digit:].]*)\s+" . $c . "$/", $string, $regs)) {
             return array("red" => $regs[1] * 255, "green" => $regs[2] * 255, "blue" => $regs[3] * 255);
         }
 
@@ -1299,16 +1384,17 @@ class libPDF extends FPDF implements libPDFInterface
             }
         }
 
-        $str = "";
+        $str    = "";
         $strlen = 0;
 
-        while (preg_match("/^(\s*\S*\s*)(.*)$/s", $string, $regs) && ($strlen + ($len = $this->GetStringWidth($regs[1]))) < $width - 2) {
+        while (preg_match("/^(\s*\S*\s*)(.*)$/s", $string,
+                $regs) && ($strlen + ($len = $this->GetStringWidth($regs[1]))) < $width - 2) {
             $str .= $regs[1];
             $strlen += $len;
 
-            if (!isset($regs[2])) {
+            if ( ! isset($regs[2])) {
                 $string = "";
-                $regs = null;
+                $regs   = null;
 
                 break;
             }
@@ -1318,7 +1404,7 @@ class libPDF extends FPDF implements libPDFInterface
             $regs = null;
         }
 
-        if ($str == "" && !$allowempty) {
+        if ($str == "" && ! $allowempty) {
             $str = $regs[1];
 
             if (isset($regs[2])) {
@@ -1332,7 +1418,7 @@ class libPDF extends FPDF implements libPDFInterface
             if ($string == "") {
                 $string = $append;
             } else {
-                $string .= "\n".$append;
+                $string .= "\n" . $append;
             }
         }
 
@@ -1359,7 +1445,7 @@ class libPDF extends FPDF implements libPDFInterface
             }
 
             $outline = $set[0];
-            $outlen = $lengths[0];
+            $outlen  = $lengths[0];
 
             for ($i = 1; $i < count($set); $i += 2) {
                 $wlen = $lengths[$i];
@@ -1373,7 +1459,7 @@ class libPDF extends FPDF implements libPDFInterface
                 if ($outlen + $wlen > $width) {
                     $lines[] = $outline;
                     $outline = $set[$i + 1];
-                    $outlen = $lengths[$i + 1];
+                    $outlen  = $lengths[$i + 1];
                 } else {
                     $outline .= $word;
                     $outlen += $wlen;
@@ -1393,7 +1479,7 @@ class libPDF extends FPDF implements libPDFInterface
 
     private function getChunkedLineLengths($chunks, $width)
     {
-        $x = 0;
+        $x    = 0;
         $text = "x";
 
         $curfont = $this->GetCurrentFont();
@@ -1411,7 +1497,7 @@ class libPDF extends FPDF implements libPDFInterface
                 while (count($lines = $this->SplitTextAt($text, $width - $x, false, false)) > 1) {
                     $lengths[] = $x + $this->GetStringWidth($lines[0]);
 
-                    $x = 0;
+                    $x    = 0;
                     $text = $lines[1];
                 }
 
