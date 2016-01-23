@@ -1,16 +1,16 @@
-<?php namespace PDFLib;
+<?php namespace PDFLib\Documents;
 
 class FallbackDocument extends BaseDocument
 {
     /**
      * FallbackDocument constructor.
      *
-     * @param Interfaces\DocumentType $classname
-     * @param                         $docclass
+     * @param \PDFLib\Interfaces\DocumentType $classname
+     * @param                                 $document
      */
-    public function __construct($classname, $docclass)
+    public function __construct($classname, $document)
     {
-        parent::__construct($docclass);
+        parent::__construct($document);
 
         $this->setMessage("PDF class not defined");
     }

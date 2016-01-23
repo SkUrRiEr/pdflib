@@ -54,7 +54,8 @@ error_reporting(E_ALL);
 
 session_cache_limiter("private_no_expire");
 
-use PDFLib\BaseDocument;
+use PDFLib\Documents\BaseDocument;
+use PDFLib\Documents\FallbackDocument;
 
 $items = array();
 $extension = null;
@@ -71,7 +72,6 @@ if (isset($_SERVER["PATH_INFO"]) && $_SERVER["PATH_INFO"] != "") {
     $items = explode("/", $path);
 }
 
-// @TODO: Add factory to load docclass
 $PDFLib = new PDFLib\PDFLib();
 
 $args = array();
@@ -86,18 +86,15 @@ if (count($items) > 0) {
     $className = ucfirst(current($items));
 }
 
-$namespacedClassName = "PDFLib\\{$className}Document";
+$namespacedClassName = "PDFLib\\Documents\\{$className}Document";
 
 if ($className != null && class_exists($namespacedClassName)) {
     $document = new $namespacedClassName($PDFLib);
-
-    if (! is_subclass_of($document, \PDFLib\BaseDocument::class)) {
-        $document = new \PDFLib\FallbackDocument($className, $PDFLib);
-    }
 }
 
-var_dump($className, $document);
-exit;
+if (! is_subclass_of($document, BaseDocument::class)) {
+    $document = new FallbackDocument($className, $PDFLib);
+}
 
 $etag = $document->getETag($args);
 
@@ -124,15 +121,10 @@ if ($ret === null) {
 
     header("HTTP/1.1 500 Server Error");
 } else {
-    // FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
     header("Content-Type: ".$document->getMimeType());
-    //header("Content-Type: ".$PDFLib->getMimeType());
 
     $content = $document->getContent();
-    //$content = $PDFLib->getContent();
-
     header("Content-Disposition: inline; filename=\"".$name.".".$document->getExtension()."\";");
-    //header("Content-Disposition: inline; filename=".$name.".".$PDFLib->getExtension().";");
     header("Content-Length: ".strlen($content));
 }
 
