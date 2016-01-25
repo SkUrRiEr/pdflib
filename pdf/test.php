@@ -22,16 +22,16 @@ class test extends pdfBase
     public function onFooter()
     {
         $this->SetDefaultFont();
-        $this->SetY($this->h - $this->bMargin + $this->FontSizePt / 2);
+        $this->SetY($this->GetPageHeight() - $this->bMargin + $this->FontSizePt / 2);
         $this->Cell(0, 0, "This text is within the footer!", 0, 1, "C");
     }
 
     public function pageRect()
     {
         $this->SetDrawColor("#0000FF");
-        $this->Rect($this->lMargin, $this->tMargin, $this->w - $this->lMargin - $this->rMargin, $this->h - $this->tMargin - $this->bMargin);
+        $this->Rect($this->lMargin, $this->tMargin, $this->GetPageWidth() - $this->lMargin - $this->rMargin, $this->GetPageHeight() - $this->tMargin - $this->bMargin);
         $this->SetDrawColor("#FF0000");
-        $this->Line($this->lMargin, $this->PageBreakTrigger, $this->w - $this->rMargin, $this->PageBreakTrigger);
+        $this->Line($this->lMargin, $this->PageBreakTrigger, $this->GetPageWidth() - $this->rMargin, $this->PageBreakTrigger);
         $this->SetDrawColor("#000000");
     }
 
@@ -177,7 +177,7 @@ class test extends pdfBase
             for ($i = 0; $i < 10; $i++) {
                 $this->SetY($this->PageBreakTrigger - $this->FontSizePt * $i / 5);
                 $this->SetDrawColor("#00FF00");
-                $this->Line($this->lMargin, $this->GetY(), $this->w - $this->rMargin, $this->GetY());
+                $this->Line($this->lMargin, $this->GetY(), $this->GetPageWidth() - $this->rMargin, $this->GetY());
                 $this->SetDrawColor("#000000");
 
                 $this->FlowText("Let's write a lot of text to ensure that it flows over page boundaries properly. We're really pushing the boat out here, gotta make sure it's all correct. Hmm .... Lots of text, LOATS OOOOVVV TEEEAAACCKKSST. Ahem. So lots of text, lots and lots of text. Long words too, antidisestablishmentarianism, supercalifragilisticexpialidocious, .... refrigerator?... ok, that's enough.", null, $a);
@@ -187,7 +187,7 @@ class test extends pdfBase
             }
         }
 
-        $mw = $this->w - $this->lMargin - $this->rMargin;
+        $mw = $this->GetPageWidth() - $this->lMargin - $this->rMargin;
 
         $this->TableCell("This is testing the <b>new</b> HTML in table functionality.", $mw / 2, null, "L", 1);
         $this->Ln();

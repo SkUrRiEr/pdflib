@@ -13,6 +13,16 @@ class libPDF extends FPDF implements libPDFInterface
     private $curFlowLine;
     private $curFlowLineAlign;
 
+    /**
+     * Over-write the protected properties of the FPDF base class.
+     */
+    public $bMargin;
+    public $tMargin;
+    public $rMargin;
+    public $lMargin;
+    public $PageBreakTrigger;
+    public $FontSizePt;
+
     private $listeners;
 
     public function __construct($orientation = "P", $unit = "mm", $format = "A4")
@@ -217,7 +227,7 @@ class libPDF extends FPDF implements libPDFInterface
         $bg = $c["red"] != 255 || $c["green"] != 255 || $c["blue"] != 255;
 
         if ($width == null) {
-            $width = $this->w - $this->rMargin - $this->GetX();
+            $width = $this->getPageWidth() - $this->rMargin - $this->GetX();
         }
 
         $chunks = $this->SplitHTMLChunks($html, $fontstyle);
@@ -265,7 +275,7 @@ class libPDF extends FPDF implements libPDFInterface
 
         while ($text != "") {
             $x = $this->GetX();
-            $w = $this->w - $this->rMargin - $x;
+            $w = $this->getPageWidth() - $this->rMargin - $x;
 
             $set = $this->SplitTextAt($text, $w);
 
@@ -511,7 +521,7 @@ class libPDF extends FPDF implements libPDFInterface
             $c = cos($angle);
             $s = sin($angle);
             $cx = $x * $this->k;
-            $cy = ($this->h - $y) * $this->k;
+            $cy = ($this->GetPageHeight() - $y) * $this->k;
 
             $this->_out(sprintf('q %.5f %.5f %.5f %.5f %.2f %.2f cm 1 0 0 1 %.2f %.2f cm', $c, $s, -$s, $c, $cx, $cy, -$cx, -$cy));
         }
@@ -859,7 +869,7 @@ class libPDF extends FPDF implements libPDFInterface
                     $tw += $set["w"];
                 }
 
-                $mw = $this->w - $this->rMargin - $x;
+                $mw = $this->getPageWidth() - $this->rMargin - $x;
 
                 $offset = $mw - $tw;
 
