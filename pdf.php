@@ -1,5 +1,7 @@
 <?php
 
+require __DIR__ . '/vendor/autoload.php';
+
 session_cache_limiter("private_no_expire");
 
 require_once("pdf/lib/pdfBase.php");
