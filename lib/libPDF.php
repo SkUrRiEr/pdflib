@@ -9,9 +9,12 @@ class libPDF extends FPDF implements libPDFInterface
     private $defered_borders;
     private $cur_line_h;
     private $angle;
-    private $defaultOrientation;
     private $curFlowLine;
     private $curFlowLineAlign;
+
+    /* Local default orientation - FPDF's can only be set in the constructor.
+     */
+    private $defaultOrientation;
 
     /**
      * Over-write the protected properties of the FPDF base class.
@@ -28,6 +31,8 @@ class libPDF extends FPDF implements libPDFInterface
     public function __construct($orientation = "P", $unit = "mm", $format = "A4")
     {
         parent::__construct($orientation, $unit, $format);
+
+        $this->setDefaultOrientation($orientation);
 
         $this->default_font = array(
             "name" => "Helvetica",
@@ -538,8 +543,11 @@ class libPDF extends FPDF implements libPDFInterface
 
     public function AddPage($o = null, $f = "")
     {
-        if ($o == null) {
-            $o = $this->defaultOrientation;
+        /* Override FPDF's default orientation as it can only be set in
+         * FPDF's constructor.
+         */
+        if ($orientation == null) {
+            $orientation = $this->defaultOrientation;
         }
 
         parent::AddPage($o, $f);
