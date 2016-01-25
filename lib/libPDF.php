@@ -49,7 +49,7 @@ class libPDF extends FPDF implements libPDFInterface
         $fonts = array();
 
         foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            $d = opendir($path."/pdf/fonts");
+            $d = opendir($path."/fonts");
 
             while ($f = readdir($d)) {
                 if (preg_match("/^(.*)\.php$/", $f, $regs)) {
@@ -85,7 +85,7 @@ class libPDF extends FPDF implements libPDFInterface
                 $file = str_replace(' ', '', $f).strtolower($s).'.php';
 
                 foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-                    if (file_exists($path."/pdf/fonts/".$file)) {
+                    if (file_exists($path."/fonts/".$file)) {
                         $this->AddFont($f, $s);
 
                         break;
@@ -102,8 +102,8 @@ class libPDF extends FPDF implements libPDFInterface
         $defaultFontpath = $this->fontpath;
 
         foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            if (file_exists($path."/pdf/fonts/".$font)) {
-                $this->fontpath = $path."/pdf/fonts/";
+            if (file_exists($path."/fonts/".$font)) {
+                $this->fontpath = $path."/fonts/";
 
                 break;
             }
