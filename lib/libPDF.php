@@ -170,16 +170,6 @@ class libPDF extends FPDF implements libPDFInterface
         return $set;
     }
 
-    public function getMimeType()
-    {
-        return "application/pdf";
-    }
-
-    public function getExtension()
-    {
-        return "pdf";
-    }
-
     public function addListener(libPDFListener $class)
     {
         $this->listeners[] = $class;

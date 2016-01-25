@@ -52,33 +52,25 @@ require_once("pdf/lib/pdfBase.php");
 require_once("lib/util.php");
 
 $items = array();
-$extension = null;
 
 if (isset($_SERVER["PATH_INFO"]) && $_SERVER["PATH_INFO"] != "") {
     $path = preg_replace("/^\//", "", $_SERVER["PATH_INFO"]);
 
     if (preg_match("/^(.*)\.(.*?)$/", $path, $regs)) {
-        $extension = $regs[2];
-
         $path = $regs[1];
     }
 
     $items = explode("/", $path);
 }
 
-switch (strtolower($extension)) {
-    case "pdf":
-    default:
-        require_once("lib/libPDF.php");
-        $docclass = new libPDF();
-}
+require_once("lib/libPDF.php");
+$docclass = new libPDF();
 
-// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
-/*if ($_SERVER["HTTP_USER_AGENT"] == "contype") {
-        header("Content-Type: ".$docclass->getMimeType());
+if ($_SERVER["HTTP_USER_AGENT"] == "contype") {
+        header("Content-Type: application/pdf");
 
         exit;
-}*/
+}
 
 $args = array();
 for ($i = 1; $i < count($items); $i++) {
@@ -122,12 +114,6 @@ if ($etag != null) {
     header("ETag: \"".$etag."\"");
 }
 
-// FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
-if ($_SERVER["HTTP_USER_AGENT"] == "contype") {
-    header("Content-Type: ".$cls->getMimeType());
-    exit;
-}
-
 $ret = $cls->display($args);
 
 if ($ret != null && $ret != false) {
@@ -147,15 +133,11 @@ if ($ret === null) {
 
     header("HTTP/1.1 500 Server Error");
 } else {
-    // FIXME: HACK: This is to support the hacked up RTF code in DPCCapTool
-    header("Content-Type: ".$cls->getMimeType());
-    //header("Content-Type: ".$docclass->getMimeType());
+    header("Content-Type: application/pdf");
 
     $content = $cls->getContent();
-    //$content = $docclass->getContent();
 
-    header("Content-Disposition: inline; filename=\"".$name.".".$cls->getExtension()."\";");
-    //header("Content-Disposition: inline; filename=".$name.".".$docclass->getExtension().";");
+    header("Content-Disposition: inline; filename=".$name.".pdf;");
     header("Content-Length: ".strlen($content));
 }
 
