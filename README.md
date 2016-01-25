@@ -61,12 +61,12 @@ All contributions must contain a signed-off-by line in accordance with the Devel
 All contributions must be licensed under the LGPL 2.1.
 
 ## Usage / API
-pdf/test.php is a basic test case and provides a good reference for how a pdf class should work.
+`src/Documents/ExampleDocument.php` is a basic test case and provides a good reference for how a pdf class should work.
 
 It's output can be found by loading:
 
-http://site/path/to/dir/pdf.php/test
+`http://site/path/to/dir/pdf.php/example.pdf`
 
 in a browser.
 
-The PDF file produced is also saved in the top directory.
+The PDF file produced is also saved in the top directory as `example.pdf`.
