@@ -541,7 +541,7 @@ class libPDF extends FPDF implements libPDFInterface
 
     // Overidden base class functions
 
-    public function AddPage($o = null, $f = "")
+    public function AddPage($orientation = null, $size = "", $rotation = 0)
     {
         /* Override FPDF's default orientation as it can only be set in
          * FPDF's constructor.
@@ -550,7 +550,7 @@ class libPDF extends FPDF implements libPDFInterface
             $orientation = $this->defaultOrientation;
         }
 
-        parent::AddPage($o, $f);
+        parent::AddPage($orientation, $size, $rotation);
 
         /* The standard way to do headers is to mod the tMargin to
          * exclude the amount of space the header will take up, then
