@@ -1,6 +1,6 @@
 <?php
 
-require_once("fpdf/fpdf.php");
+require_once("vendor/setasign/fpdf/fpdf.php");
 require_once("lib/libPDFInterface.php");
 
 class libPDF extends FPDF implements libPDFInterface

@@ -1,0 +1,17 @@
+{
+  "name": "root/pdflib",
+  "description": "A basic PHP PDF library based on fpdf",
+  "require": {
+    "setasign/fpdf": "1.7"
+  },
+  "license": "GNU 2.1",
+  "authors": [
+    {
+      "name": "Julian Calaby"
+    },
+    {
+      "name": "James Healey",
+      "email": "jayhealey@gmail.com"
+    }
+  ]
+}
