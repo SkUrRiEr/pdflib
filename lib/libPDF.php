@@ -552,11 +552,8 @@ class libPDF extends FPDF implements libPDFInterface
 
         parent::AddPage($orientation, $size, $rotation);
 
-        /* The standard way to do headers is to mod the tMargin to
-         * exclude the amount of space the header will take up, then
-         * mod Y to move the cursor to the right spot, emit the header
-         * then leave. Let's fix it back up so stuff starts at the
-         * right point.
+        /* Fudge starting position so all pages start at the same point
+         * regardless of how much header there is.
          */
         $this->SetY($this->tMargin);
 
