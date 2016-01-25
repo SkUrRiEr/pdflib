@@ -49,7 +49,11 @@ them return `null`, then a 404 page will be generated with the string from
 to get the PDF data.
 
 ## Installation
-This expects FPDF to be unzipped to /fpdf
+The dependencies are stored in `composer.json`, so install composer (see https://getcomposer.org/ for instructions) then run:
+
+```
+composer install
+```
 
 ## Contributing
 All contributions must contain a signed-off-by line in accordance with the Developer Certificate of Origin: http://developercertificate.org/
