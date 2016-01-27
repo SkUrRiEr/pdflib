@@ -67,6 +67,9 @@ class PDFLib extends FPDF implements DocumentType
         $this->SetDefaultFont();
 
         $this->listeners = array();
+
+        $this->PDFVersion = '1.4'; // For artifact tagging in page number
+                                   // methods
     }
 
     /**
@@ -787,6 +790,34 @@ class PDFLib extends FPDF implements DocumentType
     public function GetTextColor()
     {
         return $this->decodePDFColour($this->TextColor, "g", "rg");
+    }
+
+    /**
+     * Emit PDF code to start a "Pagination" "Artifact"
+     *
+     * This must be used with endPageNumbers().
+     *
+     * Exactly what you can and can't do within a footer is fairly restricted,
+     * so it's recommended that you emit footers as in the example document:
+     * @example src/Documents/ExampleDocument.php 33 5 startPageNumbers() example
+     *
+     * Note that this feature was introduced in version 1.4 of the PDF
+     * specification, so you _MUST_ not use this method if you're producing
+     * PDFs with a lower version number.
+     */
+    public function startPageNumbers()
+    {
+        $this->_out("/Artifact << /Type /Pagination\n/SubType /Footer >> BDC");
+    }
+
+    /**
+     * Emit PDF code to end a "Pagination" "Artifact"
+     *
+     * @see PDFLib::startPageNumbers()
+     */
+    public function endPageNumbers()
+    {
+        $this->_out("EMC");
     }
 
     public function Footer()
