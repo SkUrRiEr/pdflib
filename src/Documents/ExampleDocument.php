@@ -30,9 +30,11 @@ class ExampleDocument extends BaseDocument
      */
     public function onFooter()
     {
+        $this->startPageNumbers();
         $this->SetDefaultFont();
         $this->SetY($this->GetPageHeight() - $this->bMargin + $this->FontSizePt / 2);
-        $this->Cell(0, 0, "This text is within the footer!", 0, 1, "C");
+        $this->Cell(0, 0, "This text is within the footer and should be treated as a page number!", 0, 1, "C");
+        $this->endPageNumbers();
     }
 
     public function pageRect()
