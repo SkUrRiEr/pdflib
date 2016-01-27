@@ -4,10 +4,11 @@
   "require": {
     "setasign/fpdf": "~1.8"
   },
-  "license": "GNU 2.1",
+  "license": "LGPL-2.1",
   "authors": [
     {
-      "name": "Julian Calaby"
+      "name": "Julian Calaby",
+      "email": "julian.calaby@gmail.com"
     },
     {
       "name": "James Healey",
