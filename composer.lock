@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "a75b00bc8d77649951ff9c76d02f7cea",
-    "content-hash": "c01cfcb5cf838ade5ecf37f43b8b0ce6",
+    "hash": "60dc8edf406881990822c23f8f91dd56",
+    "content-hash": "9e796604ec509024fd32b5a00598fdd9",
     "packages": [
         {
             "name": "setasign/fpdf",

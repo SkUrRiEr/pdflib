@@ -1,5 +1,5 @@
 {
-  "name": "SkUrRiEr/pdflib",
+  "name": "skurrier/pdflib",
   "description": "A basic PHP PDF library based on FPDF",
   "require": {
     "setasign/fpdf": "~1.8"
