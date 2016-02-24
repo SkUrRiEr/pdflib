@@ -1,15 +1,15 @@
-<?php namespace PDFLib\Documents;
+<?php namespace PDFLib\Test;
 
-use PDFLib\Interfaces\DocumentType;
+use PDFLib\PDFLib;
 
-class ExampleDocument extends BaseDocument
+class ExampleDocument extends PDFLib
 {
     /**
      * @inherit
      */
-    public function __construct(DocumentType $pdf)
+    public function __construct()
     {
-        parent::__construct($pdf);
+        parent::__construct();
 
         $this->SetAutoPageBreak(true, $this->bMargin + $this->FontSizePt);
         $this->SetTopMargin($this->tMargin + $this->FontSizePt);
@@ -18,7 +18,7 @@ class ExampleDocument extends BaseDocument
     /**
      * @inherit
      */
-    public function onHeader()
+    public function Header()
     {
         $this->SetDefaultFont();
         $this->SetY($this->tMargin - $this->FontSizePt);
@@ -28,7 +28,7 @@ class ExampleDocument extends BaseDocument
     /**
      * @inherit
      */
-    public function onFooter()
+    public function Footer()
     {
         $this->startPageNumbers();
         $this->SetDefaultFont();
@@ -47,15 +47,8 @@ class ExampleDocument extends BaseDocument
         $this->SetDrawColor("#000000");
     }
 
-    /**
-     * @param $args
-     *
-     * @return bool
-     */
-    public function display($args)
+    public function display()
     {
-        $this->setName("Page");
-
         $this->AddPage();
 
         $this->FlowText("As you read this text, you will notice that we seamlessly flow from ");
@@ -286,7 +279,5 @@ class ExampleDocument extends BaseDocument
         $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.",
             null, "U", "L", 1);
         $this->Ln();
-
-        return true;
     }
 }
