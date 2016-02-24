@@ -787,7 +787,7 @@ class PDFLib extends FPDF
      *
      * Exactly what you can and can't do within a footer is fairly restricted,
      * so it's recommended that you emit footers as in the example document:
-     * @example src/Documents/ExampleDocument.php 33 5 startPageNumbers() example
+     * @example test/example.php 33 5 startPageNumbers() example
      *
      * Note that this feature was introduced in version 1.4 of the PDF
      * specification, so you _MUST_ not use this method if you're producing
