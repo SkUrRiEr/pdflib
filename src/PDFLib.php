@@ -1283,6 +1283,42 @@ class PDFLib extends FPDF
         $this->defered_borders = array();
     }
 
+    private function parseHTMLColour($colour)
+    {
+        $colour = trim($colour);
+
+        if (preg_match("/^#([0123456789ABCDEF]{2})([0123456789ABCDEF]{2})([0123456789ABCDEF]{2})$/i", $colour, $regs)) {
+            $red   = $regs[1];
+            $green = $regs[2];
+            $blue  = $regs[3];
+        } elseif (preg_match("/^#([0123456789ABCDEF]{3})$/i", $colour, $regs)) {
+            $red   = $regs[1][0] . $regs[1][0];
+            $green = $regs[1][1] . $regs[1][1];
+            $blue  = $regs[1][2] . $regs[1][2];
+        }
+
+        if (isset($red)) {
+            $out = array();
+
+            $out["red"]   = hexdec($red);
+            $out["green"] = hexdec($green);
+            $out["blue"]  = hexdec($blue);
+
+            return $out;
+        }
+
+        /* TODO: Add support for standard named HTML colours
+                switch($colour) {
+                }
+         */
+
+        return array(
+            "red"   => 255,
+            "green" => 255,
+            "blue"  => 255
+        );
+    }
+
     private function parseColours($r, $g, $b)
     {
         if ($r == null) {
@@ -1294,7 +1330,7 @@ class PDFLib extends FPDF
         }
 
         if (is_string($r) && $g == null && $b == null) {
-            return parseHTMLColour($r);
+            return $this->parseHTMLColour($r);
         }
 
         if ($g == null || $b == null || ($r == $g && $g == $b)) {

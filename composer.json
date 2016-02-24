@@ -18,9 +18,6 @@
   "autoload": {
     "psr-4": {
       "PDFLib\\": "src/"
-    },
-    "files": [
-      "src/helpers.php"
-    ]
+    }
   }
 }
