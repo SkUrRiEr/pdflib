@@ -1,10 +1,8 @@
 <?php namespace PDFLib;
 
 use FPDF;
-use PDFLib\Interfaces\DocumentType;
-use PDFLib\Interfaces\EventListener;
 
-class PDFLib extends FPDF implements DocumentType
+class PDFLib extends FPDF
 {
     public $default_font;
     private $excess_text;
@@ -29,8 +27,6 @@ class PDFLib extends FPDF implements DocumentType
     public $lMargin;
     public $PageBreakTrigger;
     public $FontSizePt;
-
-    private $listeners;
 
     /**
      * PDFLib constructor.
@@ -206,14 +202,6 @@ class PDFLib extends FPDF implements DocumentType
         }
 
         return $set;
-    }
-
-    /**
-     * @param EventListener $class
-     */
-    public function addListener(EventListener $class)
-    {
-        $this->listeners[] = $class;
     }
 
     /**
@@ -818,24 +806,6 @@ class PDFLib extends FPDF implements DocumentType
     public function endPageNumbers()
     {
         $this->_out("EMC");
-    }
-
-    public function Footer()
-    {
-        parent::Footer();
-
-        foreach ($this->listeners as $l) {
-            $l->onFooter();
-        }
-    }
-
-    public function Header()
-    {
-        parent::Header();
-
-        foreach ($this->listeners as $l) {
-            $l->onHeader();
-        }
     }
 
     // Helper functions
@@ -1566,10 +1536,5 @@ class PDFLib extends FPDF implements DocumentType
         $this->SetDefaultFont($curfont);
 
         return $lengths;
-    }
-
-    public function getContent()
-    {
-        return $this->Output(null, "S");
     }
 }
