@@ -62,8 +62,6 @@ class PDFLib extends FPDF
 
         $this->SetDefaultFont();
 
-        $this->listeners = array();
-
         $this->PDFVersion = '1.4'; // For artifact tagging in page number
                                    // methods
     }
