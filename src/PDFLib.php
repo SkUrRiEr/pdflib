@@ -1345,6 +1345,8 @@ class PDFLib extends FPDF
             }
 
             imageinterlace($im, false);
+            imagealphablending($im, true);
+            imagesavealpha($im, true);
 
             $tempname = tempnam(sys_get_temp_dir(), 'FOO');
 
