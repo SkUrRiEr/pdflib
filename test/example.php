@@ -279,5 +279,13 @@ class ExampleDocument extends PDFLib
         $this->TableCell("This is a second cell, it should be aligned properly, especially once we're off the first line.\n\nThis is another line to check the alignment.",
             null, "U", "L", 1);
         $this->Ln();
+
+        $this->AddPage();
+
+        $this->FlowText("The following image is an interlaced PNG. This is not normally supported by FPDF, however we have worked around it by creating a temporary file.");
+        $this->Ln();
+
+        $this->Image("test/interlaced.png");
+        $this->Ln();
     }
 }

@@ -11,6 +11,8 @@ class PDFLib extends FPDF
     private $angle;
     private $curFlowLine;
     private $curFlowLineAlign;
+    private $interlacedPNGs;
+    private $toUnlink;
 
     /* Local default orientation - FPDF's can only be set in the constructor.
      */
@@ -59,11 +61,23 @@ class PDFLib extends FPDF
         $this->curFlowLine      = array();
         $this->curFlowLineAlign = null;
         $this->angle            = 0;
+        $this->interlacedPNGs   = array();
+        $this->toUnlink         = array();
 
         $this->SetDefaultFont();
 
         $this->PDFVersion = '1.4'; // For artifact tagging in page number
                                    // methods
+    }
+
+    /**
+     * Clean up temporary deinterlaced PNGs
+     */
+    public function __destruct()
+    {
+        foreach ($this->toUnlink as $filename) {
+            unlink($filename);
+        }
     }
 
     /**
@@ -779,6 +793,23 @@ class PDFLib extends FPDF
     }
 
     /**
+     * Override FPDF's Image method to handle interlaced PNGs
+     *
+     * @see FPDF::Image()
+     */
+    public function Image($file, $x = null, $y = null, $w = 0, $h = 0, $type = '', $link = '')
+    {
+        if (preg_match("/\.png$/i", $file) || strtolower($type) == "png") {
+            $file = $this->fixInterlacedPNG($file);
+
+            // This may return a temp without a png extension
+            $type = "png";
+        }
+
+        return parent::Image($file, $x, $y, $w, $h, $type, $link);
+    }
+
+    /**
      * Emit PDF code to start a "Pagination" "Artifact"
      *
      * This must be used with endPageNumbers().
@@ -1279,6 +1310,61 @@ class PDFLib extends FPDF
         }
 
         $this->defered_borders = array();
+    }
+
+    /**
+     * Check if PNGs passed are interlaced and make a temporary de-interlaced
+     * version if they are.
+     *
+     * De-interlaced versions are stored in the system temp directory and are
+     * unlinked when the class is destructed.
+     *
+     * @param string $file Filename of the PNG file to be checked
+     * @return string Filename of a non-interlaced PNG
+     */
+    private function fixInterlacedPNG($file)
+    {
+        if (isset($this->interlacedPNGs[$file])) {
+            return $this->interlacedPNGs[$file];
+        }
+
+        $handle = fopen($file, "r");
+
+        if (!$handle) {
+            $this->Error("Cannot open ".$file);
+        }
+
+        $contents = fread($handle, 32);
+        fclose($handle);
+
+        if (ord($contents[28]) != 0) {
+            $im = imagecreatefrompng($file);
+
+            if (!$im) {
+                $this->Error("Cannot create image from ".$file);
+            }
+
+            imageinterlace($im, false);
+
+            $tempname = tempnam(sys_get_temp_dir(), 'FOO');
+
+            $ret = imagepng($im, $tempname);
+
+            imagedestroy($im);
+
+            if (!$ret) {
+                $this->Error("Could not save a non-interlaced version of ".$file);
+            }
+
+            $this->interlacedPNGs[$file] = $tempname;
+            $this->toUnlink[] = $tempname;
+
+            return $tempname;
+        }
+
+        $this->interlacedPNGs[$file] = $file;
+
+        return $file;
     }
 
     private function parseHTMLColour($colour)

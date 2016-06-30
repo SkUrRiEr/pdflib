@@ -11,6 +11,9 @@ The dependencies are stored in `composer.json`, so install composer (see https:/
 composer install
 ```
 
+The GD extension is also required to deinterlace interlaced PNGs.
+
+
 ## Contributing
 All contributions must contain a signed-off-by line in accordance with the Developer Certificate of Origin: http://developercertificate.org/
 
